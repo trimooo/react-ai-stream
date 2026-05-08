@@ -1,5 +1,10 @@
 # react-ai-stream
 
+[![npm](https://img.shields.io/npm/v/@react-ai-stream/react?label=%40react-ai-stream%2Freact)](https://www.npmjs.com/package/@react-ai-stream/react)
+[![npm](https://img.shields.io/npm/v/@react-ai-stream/ui?label=%40react-ai-stream%2Fui)](https://www.npmjs.com/package/@react-ai-stream/ui)
+[![npm](https://img.shields.io/npm/v/@react-ai-stream/core?label=%40react-ai-stream%2Fcore)](https://www.npmjs.com/package/@react-ai-stream/core)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
+
 Stream AI responses into your React app in under a minute.
 
 - **One hook** — `useAIChat` manages messages, loading state, abort, and errors
