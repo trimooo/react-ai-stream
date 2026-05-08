@@ -4,6 +4,7 @@
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/ui?label=%40react-ai-stream%2Fui)](https://www.npmjs.com/package/@react-ai-stream/ui)
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/core?label=%40react-ai-stream%2Fcore)](https://www.npmjs.com/package/@react-ai-stream/core)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
+[![Live demo](https://img.shields.io/badge/live%20demo-react--ai--stream.vercel.app-6366f1)](https://react-ai-stream-example.vercel.app/)
 
 Stream AI responses into your React app in under a minute.
 
