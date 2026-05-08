@@ -1,11 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["tsconfig.base.json"],
+  "globalEnv": ["GROQ_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "tsup.config.ts", "tsconfig.json", "package.json"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
       "dependsOn": ["^build"],
