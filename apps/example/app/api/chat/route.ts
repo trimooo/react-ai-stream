@@ -156,11 +156,12 @@ export async function POST(req: NextRequest) {
     if (provider === 'groq') {
       const apiKey = process.env.GROQ_API_KEY
       if (!apiKey) throw new Error('GROQ_API_KEY not set')
+      const model = req.nextUrl.searchParams.get('model') ?? 'llama-3.3-70b-versatile'
       stream = await streamOpenAICompatible(
         messages,
         'https://api.groq.com/openai/v1/chat/completions',
         apiKey,
-        'llama-3.3-70b-versatile',
+        model,
       )
     } else if (provider === 'openai') {
       const apiKey = process.env.OPENAI_API_KEY
