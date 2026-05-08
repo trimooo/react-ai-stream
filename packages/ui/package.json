@@ -1,6 +1,6 @@
 {
   "name": "@react-ai-stream/ui",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Pre-built UI components for react-ai-stream",
   "license": "MIT",
   "type": "module",
@@ -15,7 +15,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "publishConfig": { "access": "public" },
   "repository": { "type": "git", "url": "git+https://github.com/trimooo/react-ai-stream.git", "directory": "packages/ui" },
   "homepage": "https://github.com/trimooo/react-ai-stream#readme",
@@ -28,8 +28,8 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@react-ai-stream/core": "^0.1.1",
-    "@react-ai-stream/react": "^0.1.1",
+    "@react-ai-stream/core": "^0.1.2",
+    "@react-ai-stream/react": "^0.1.2",
     "highlight.js": "^11.0.0",
     "react-markdown": "^9.0.0",
     "rehype-highlight": "^7.0.0",
