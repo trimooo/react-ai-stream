@@ -6,9 +6,9 @@ import { MessageList } from '@react-ai-stream/ui'
 import '@react-ai-stream/ui/styles'
 
 const MODELS = [
-  { model: 'llama-3.3-70b-versatile',        label: 'Llama 3.3 70B', badge: 'Meta' },
-  { model: 'llama-3.1-8b-instant',            label: 'Llama 3.1 8B',  badge: 'Meta · fast' },
-  { model: 'deepseek-r1-distill-llama-70b',   label: 'DeepSeek R1',   badge: 'DeepSeek' },
+  { model: 'llama-3.3-70b-versatile',                   label: 'Llama 3.3 70B',  badge: 'Meta' },
+  { model: 'llama-3.1-8b-instant',                       label: 'Llama 3.1 8B',   badge: 'Meta · fast' },
+  { model: 'meta-llama/llama-4-scout-17b-16e-instruct',  label: 'Llama 4 Scout',  badge: 'Meta · new' },
 ]
 
 const SUGGESTIONS = [
