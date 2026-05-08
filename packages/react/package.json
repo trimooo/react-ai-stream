@@ -15,7 +15,7 @@
   "types": "./dist/index.d.ts",
   "files": ["dist"],
   "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "https://github.com/trimooo/react-ai-stream.git", "directory": "packages/react" },
+  "repository": { "type": "git", "url": "git+https://github.com/trimooo/react-ai-stream.git", "directory": "packages/react" },
   "homepage": "https://github.com/trimooo/react-ai-stream#readme",
   "bugs": { "url": "https://github.com/trimooo/react-ai-stream/issues" },
   "scripts": {
