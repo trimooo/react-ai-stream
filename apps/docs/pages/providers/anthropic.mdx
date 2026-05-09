@@ -51,8 +51,11 @@ export async function POST(req: Request) {
               const ev = JSON.parse(line.slice(6))
               if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta')
                 send({ type: 'text', text: ev.delta.text })
-              else if (ev.type === 'message_stop')
+              else if (ev.type === 'message_stop') {
                 send({ type: 'done' })
+                controller.close()
+                return
+              }
             } catch { /* skip */ }
           }
         }

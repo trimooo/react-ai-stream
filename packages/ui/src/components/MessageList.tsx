@@ -12,7 +12,7 @@ export function MessageList({ messages, loading }: MessageListProps) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, loading])
 
   return (
     <div className="ras-message-list">

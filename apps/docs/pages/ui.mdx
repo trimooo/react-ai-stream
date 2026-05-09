@@ -1,0 +1,218 @@
+---
+title: UI Components
+description: Drop-in React components for AI chat — Chat, MessageList, MessageBubble, ChatInput, MarkdownRenderer
+---
+
+import { Callout } from 'nextra/components'
+
+# UI Components
+
+`@react-ai-stream/ui` ships a set of unstyled-but-styled components you can use directly or treat as a reference for your own design system.
+
+```bash npm2yarn
+npm install @react-ai-stream/ui
+```
+
+Then import the base styles once at your app root:
+
+```tsx
+import '@react-ai-stream/ui/styles'
+```
+
+---
+
+## `<Chat>`
+
+The top-level component. Combines `MessageList` and `ChatInput` in a single wrapper.
+
+```tsx
+import { Chat } from '@react-ai-stream/ui'
+
+<Chat
+  messages={messages}
+  onSend={sendMessage}
+  onStop={stop}
+  loading={loading}
+  placeholder="Type a message…"
+  className="my-chat"
+/>
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `messages` | `Message[]` | yes | Full conversation history from `useAIChat` |
+| `onSend` | `(text: string) => void` | yes | Called when the user submits a message |
+| `onStop` | `() => void` | no | Called when the Stop button is clicked |
+| `loading` | `boolean` | no | Shows typing indicator and Stop button while `true` |
+| `placeholder` | `string` | no | Textarea placeholder. Default: `"Type a message…"` |
+| `className` | `string` | no | Extra CSS class on the outer wrapper |
+
+### Typing indicator
+
+The typing indicator appears when `loading` is `true` and the last message has no content yet (i.e., streaming just started). Once tokens arrive, the indicator hides and the assistant bubble fills in.
+
+---
+
+## `<MessageList>`
+
+Renders the conversation history and auto-scrolls to the bottom on new content.
+
+```tsx
+import { MessageList } from '@react-ai-stream/ui'
+
+<MessageList messages={messages} loading={loading} />
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `messages` | `Message[]` | yes | Conversation history. System messages are filtered out automatically |
+| `loading` | `boolean` | no | When `true`, shows the three-dot typing indicator at the bottom |
+
+---
+
+## `<MessageBubble>`
+
+Renders a single message. User messages are plain text; assistant messages go through `MarkdownRenderer`.
+
+```tsx
+import { MessageBubble } from '@react-ai-stream/ui'
+
+<MessageBubble message={message} />
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `message` | `Message` | yes | A single message object from the messages array |
+
+### CSS classes
+
+| Class | Applied to |
+|---|---|
+| `ras-message` | Outer wrapper |
+| `ras-message--user` | Added for user messages |
+| `ras-message--assistant` | Added for assistant messages |
+| `ras-message__bubble` | The bubble container |
+| `ras-message__text` | User message text |
+
+---
+
+## `<ChatInput>`
+
+The input area with an auto-send button and optional Stop button.
+
+```tsx
+import { ChatInput } from '@react-ai-stream/ui'
+
+<ChatInput
+  onSend={sendMessage}
+  onStop={stop}
+  loading={loading}
+  placeholder="Ask something…"
+  disabled={false}
+/>
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `onSend` | `(text: string) => void` | yes | Called with trimmed text on submit |
+| `onStop` | `() => void` | no | If provided, replaces Send with a Stop button while `loading` is `true` |
+| `loading` | `boolean` | no | Disables the textarea and swaps Send → Stop |
+| `placeholder` | `string` | no | Textarea placeholder |
+| `disabled` | `boolean` | no | Hard-disables the input regardless of loading state |
+
+**Keyboard:** `Enter` sends, `Shift+Enter` inserts a newline.
+
+---
+
+## `<MarkdownRenderer>`
+
+Renders markdown with GitHub-flavored extensions and syntax-highlighted code blocks. Code blocks include a copy button.
+
+```tsx
+import { MarkdownRenderer } from '@react-ai-stream/ui'
+
+<MarkdownRenderer content={markdownString} className="my-prose" />
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `content` | `string` | yes | Markdown string to render |
+| `className` | `string` | no | Extra CSS class on the wrapper `div` |
+
+### Features
+
+- GitHub Flavored Markdown (tables, strikethrough, task lists)
+- Syntax highlighting via `rehype-highlight` (uses `highlight.js` themes)
+- Copy button on fenced code blocks — copies the raw text, not highlighted spans
+
+### Bring your own highlight theme
+
+`rehype-highlight` uses `highlight.js` CSS. Import any highlight.js theme alongside `@react-ai-stream/ui/styles`:
+
+```tsx
+import '@react-ai-stream/ui/styles'
+import 'highlight.js/styles/github-dark.css'   // or any other theme
+```
+
+---
+
+## `useCopyToClipboard`
+
+A small hook that tracks copied state with auto-reset.
+
+```tsx
+import { useCopyToClipboard } from '@react-ai-stream/ui'
+
+function CopyButton({ text }: { text: string }) {
+  const { copied, copy } = useCopyToClipboard(2000)
+  return (
+    <button onClick={() => copy(text)}>
+      {copied ? 'Copied!' : 'Copy'}
+    </button>
+  )
+}
+```
+
+### Arguments
+
+| Arg | Type | Default | Description |
+|---|---|---|---|
+| `resetMs` | `number` | `2000` | Milliseconds before `copied` resets to `false` |
+
+### Returns
+
+| Value | Type | Description |
+|---|---|---|
+| `copied` | `boolean` | `true` for `resetMs` ms after a successful copy |
+| `copy` | `(text: string) => Promise<void>` | Writes text to clipboard; no-op if clipboard API is unavailable |
+
+---
+
+## CSS custom properties
+
+All component styles use the `.ras-*` namespace. You can override them in your own CSS after importing the base sheet:
+
+```css
+/* override chat container */
+.ras-chat { border-radius: 0; }
+
+/* override user bubble color */
+.ras-message--user .ras-message__bubble { background: #7c3aed; }
+
+/* override assistant bubble */
+.ras-message--assistant .ras-message__bubble { background: #1e1e2e; color: #cdd6f4; }
+```
+
+<Callout>
+  For full design-system control, skip `@react-ai-stream/ui` entirely and wire `useAIChat` to your own components. See the [custom UI example](/examples/custom-ui).
+</Callout>

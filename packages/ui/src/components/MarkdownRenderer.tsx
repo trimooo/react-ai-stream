@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -6,23 +7,28 @@ import type { Components } from 'react-markdown'
 
 function CodeBlock({ children, className }: { children?: React.ReactNode | undefined; className?: string | undefined }) {
   const { copied, copy } = useCopyToClipboard()
-  const code = typeof children === 'string' ? children : String(children ?? '')
+  const codeRef = useRef<HTMLElement>(null)
   const isInline = !className
 
   if (isInline) {
     return <code className="ras-code-inline">{children}</code>
   }
 
+  function handleCopy() {
+    const text = codeRef.current?.textContent ?? ''
+    void copy(text.replace(/\n$/, ''))
+  }
+
   return (
     <div className="ras-code-block">
       <button
         className="ras-code-copy"
-        onClick={() => copy(code.replace(/\n$/, ''))}
+        onClick={handleCopy}
         aria-label={copied ? 'Copied' : 'Copy code'}
       >
         {copied ? '✓' : 'Copy'}
       </button>
-      <code className={className}>{children}</code>
+      <code ref={codeRef} className={className}>{children}</code>
     </div>
   )
 }

@@ -15,10 +15,7 @@
     "type": "separator",
     "title": "UI Components"
   },
-  "ui": {
-    "title": "UI Components",
-    "href": "/ui"
-  },
+  "ui": "UI Components",
   "---examples": {
     "type": "separator",
     "title": "Examples"

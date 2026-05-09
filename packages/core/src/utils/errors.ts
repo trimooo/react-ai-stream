@@ -26,5 +26,5 @@ export class ParseError extends AIStreamError {
 export function isAbortError(err: unknown): boolean {
   if (err == null || typeof err !== 'object') return false
   const name = (err as { name?: unknown }).name
-  return name === 'AbortError' || name === 'DOMException'
+  return name === 'AbortError'
 }

@@ -1,0 +1,64 @@
+---
+title: API Reference
+description: Complete API reference for react-ai-stream hooks, factories, and types
+---
+
+# API Reference
+
+Complete reference for every export in the `react-ai-stream` packages.
+
+---
+
+## [`useAIChat`](/api/useaichat)
+
+The core React hook. Manages messages, streaming state, and abort.
+
+```ts
+import { useAIChat } from '@react-ai-stream/react'
+
+const { messages, sendMessage, loading, stop, error, clearMessages } = useAIChat({
+  endpoint: '/api/chat',
+})
+```
+
+→ [Full reference](/api/useaichat)
+
+---
+
+## [`createAIClient`](/api/createaiclient)
+
+Creates a reusable client you can share across multiple hook instances via `AIChatProvider`.
+
+```ts
+import { createAIClient } from '@react-ai-stream/core'
+import { AIChatProvider } from '@react-ai-stream/react'
+
+const client = createAIClient({ endpoint: '/api/chat' })
+
+export function App() {
+  return (
+    <AIChatProvider client={client}>
+      <MyApp />
+    </AIChatProvider>
+  )
+}
+```
+
+→ [Full reference](/api/createaiclient)
+
+---
+
+## [Types](/api/types)
+
+All TypeScript types exported from `@react-ai-stream/core`: `Message`, `Role`, `StreamChunk`, `AIClient`, `AIProvider`, and option interfaces.
+
+```ts
+import type {
+  Message,
+  UseAIChatOptions,
+  UseAIChatReturn,
+  AIClient,
+} from '@react-ai-stream/core'
+```
+
+→ [Full reference](/api/types)

@@ -129,7 +129,7 @@ interface Message {
 - `sendMessage` is a no-op if `loading` is `true`
 - `stop()` preserves the partial response in `messages`
 - `clearMessages()` does not abort an in-flight stream; call `stop()` first if needed
-- The AI client is created lazily on the first `sendMessage` call and cached for the component's lifetime
+- The AI client is created lazily on the first `sendMessage` call and cached until `endpoint`, `provider`, `apiKey`, or the context client changes
 - On unmount, any in-flight stream is automatically aborted
 
 ## TypeScript

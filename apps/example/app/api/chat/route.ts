@@ -60,7 +60,8 @@ async function streamOpenAICompatible(
                 }
                 const text = parsed.choices?.[0]?.delta?.content
                 if (text) controller.enqueue(encodeChunk({ type: 'text', text }))
-                if (parsed.choices?.[0]?.finish_reason === 'stop') {
+                const finishReason = parsed.choices?.[0]?.finish_reason
+                if (finishReason === 'stop' || finishReason === 'length') {
                   controller.enqueue(encodeChunk({ type: 'done' }))
                   controller.close()
                   return

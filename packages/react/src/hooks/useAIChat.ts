@@ -32,10 +32,25 @@ function resolveClient(options: UseAIChatOptions, contextClient: AIClient | null
   )
 }
 
+function deriveConfigKey(options: UseAIChatOptions): string {
+  if ('client' in options) return '__prebuilt__'
+  if ('endpoint' in options) return `endpoint:${options.endpoint}`
+  return `${options.provider}:${options.apiKey}`
+}
+
 export function useAIChat(options: UseAIChatOptions & UseAIChatCallbacks): UseAIChatReturn {
   const contextClient = useContext(AIChatContext)
   const storeRef = useRef<ReturnType<typeof createMessageStore> | null>(null)
   const clientRef = useRef<AIClient | null>(null)
+
+  const configKey = deriveConfigKey(options)
+  const configKeyRef = useRef(configKey)
+  const prevContextClientRef = useRef(contextClient)
+  if (configKey !== configKeyRef.current || contextClient !== prevContextClientRef.current) {
+    configKeyRef.current = configKey
+    prevContextClientRef.current = contextClient
+    clientRef.current = null
+  }
 
   if (!storeRef.current) {
     storeRef.current = createMessageStore()

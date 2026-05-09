@@ -57,7 +57,7 @@ export function DemoChat() {
                   {chat.error}
                 </div>
               )}
-              <div style={{ height: 380, overflow: 'hidden', flex: 1 }}>
+              <div style={{ height: 380, overflowY: 'auto', flex: 1 }}>
                 {chat.messages.length === 0 ? (
                   <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>
                     Waiting for a message…

@@ -75,7 +75,7 @@ const config: DocsThemeConfig = {
   },
   navigation: true,
   darkMode: true,
-  primaryHue: 243,
+  primaryHue: 262,
   sidebar: {
     titleComponent({ title, type }) {
       if (type === 'separator') {
