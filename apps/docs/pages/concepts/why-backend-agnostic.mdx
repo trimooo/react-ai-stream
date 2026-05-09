@@ -1,0 +1,80 @@
+---
+title: Why backend-agnostic?
+description: How react-ai-stream decouples the React layer from the AI provider
+---
+
+import { Callout } from 'nextra/components'
+import { ProviderAbstractionDiagram } from '../../components/ArchDiagram'
+
+# Why backend-agnostic?
+
+<ProviderAbstractionDiagram />
+
+Most AI chat libraries are secretly backend libraries. They stream from OpenAI, or through their cloud, or via their own server adapter. The React hook is just a thin client on top of a particular provider.
+
+`react-ai-stream` takes a different approach: the hook speaks a simple HTTP streaming protocol. Any server that produces that protocol works — regardless of which LLM, which language, or which infra it uses.
+
+## The protocol
+
+Your server emits [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) in this shape:
+
+```
+data: {"type":"text","text":"Hello"}
+data: {"type":"text","text":", world"}
+data: {"type":"done"}
+```
+
+Three event types, that's it:
+
+| Event | Meaning |
+|---|---|
+| `{"type":"text","text":"..."}` | Append text to the current assistant message |
+| `{"type":"done"}` | Stream is complete |
+| `{"type":"error","error":"..."}` | Propagate an error to the hook |
+
+The hook reads this stream and updates React state. It doesn't know or care what's behind the endpoint.
+
+## What this enables
+
+Because the protocol is just HTTP + SSE, any stack can implement it:
+
+| Backend | How |
+|---|---|
+| Next.js Edge | `ReadableStream` + `text/event-stream` response |
+| Express / Node | `res.write()` with `Transfer-Encoding: chunked` |
+| FastAPI (Python) | `StreamingResponse` with `async_generator` |
+| Go | `http.Flusher` |
+| Rails | `ActionController::Live` |
+| Cloudflare Workers | Web Streams API |
+
+The React frontend is unchanged across all of them.
+
+## Why this matters for teams
+
+If your streaming backend is owned by a separate team, or changes providers later, the frontend code is unaffected. The hook stays the same. Only the API route changes.
+
+Compare this to libraries that import `@anthropic-ai/sdk` directly in client code — now your LLM choice is coupled to your UI layer, visible in your bundle, and locked to that SDK's streaming format.
+
+<Callout type="info">
+  The built-in providers (`provider: 'openai'`, `provider: 'anthropic'`) stream directly from the browser without a server. This is fine for prototypes but exposes your API key. For production, always proxy through a server-side `endpoint`.
+</Callout>
+
+## Multiple providers, one interface
+
+You can run multiple chats to different providers simultaneously:
+
+```tsx
+const claude = useAIChat({ endpoint: '/api/chat?provider=anthropic' })
+const gpt    = useAIChat({ endpoint: '/api/chat?provider=openai' })
+const groq   = useAIChat({ endpoint: '/api/chat?provider=groq' })
+```
+
+The API route handles provider routing. The hook handles state. Neither knows about the other's implementation details.
+
+## Switching providers
+
+To change providers, you change your API route — not your React code. This matters because:
+
+- **LLM pricing changes frequently.** Switching from Claude to GPT-4 or Llama shouldn't require a frontend deploy.
+- **Provider outages happen.** A fallback route is a one-line change on the server.
+- **Regional compliance.** Route EU traffic to EU-hosted models by checking the request headers — zero frontend changes.

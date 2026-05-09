@@ -1,0 +1,272 @@
+---
+title: Quickstart
+description: Working AI streaming in under 5 minutes
+---
+
+import { Steps, Callout, Tabs, Tab } from 'nextra/components'
+
+# Quickstart
+
+Working AI streaming in a Next.js app in under 5 minutes.
+
+<Steps>
+
+### Install packages
+
+```bash npm2yarn
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+### Add your API key
+
+This example uses [Groq](https://console.groq.com) — free and instant. Add your key to `.env.local`:
+
+```bash
+GROQ_API_KEY=your_key_here
+```
+
+<Callout>
+  Groq provides a generous free tier. For production, see [Providers](/providers) to use Anthropic Claude, OpenAI, or your own backend.
+</Callout>
+
+### Create a streaming API route
+
+<Tabs items={['Next.js App Router', 'Next.js Pages Router', 'Express']}>
+<Tab>
+```ts filename="app/api/chat/route.ts"
+import { NextRequest } from 'next/server'
+
+export const runtime = 'edge'
+
+export async function POST(req: NextRequest) {
+  const { messages } = await req.json()
+
+  const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      stream: true,
+    }),
+  })
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const enc = new TextEncoder()
+      const send = (data: object) =>
+        controller.enqueue(enc.encode(`data: ${JSON.stringify(data)}\n\n`))
+
+      const reader = upstream.body!.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+        for (const part of parts) {
+          for (const line of part.split('\n')) {
+            if (!line.startsWith('data: ')) continue
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') { send({ type: 'done' }); controller.close(); return }
+            try {
+              const ev = JSON.parse(data)
+              const text = ev.choices?.[0]?.delta?.content
+              if (text) send({ type: 'text', text })
+            } catch { /* skip */ }
+          }
+        }
+      }
+      send({ type: 'done' })
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+</Tab>
+<Tab>
+```ts filename="pages/api/chat.ts"
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { messages } = req.body
+
+  const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, stream: true }),
+  })
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+
+  const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
+
+  const reader = upstream.body!.getReader()
+  const decoder = new TextDecoder()
+  let buf = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+    const parts = buf.split('\n\n')
+    buf = parts.pop() ?? ''
+    for (const part of parts) {
+      for (const line of part.split('\n')) {
+        if (!line.startsWith('data: ')) continue
+        const data = line.slice(6).trim()
+        if (data === '[DONE]') { send({ type: 'done' }); res.end(); return }
+        try {
+          const ev = JSON.parse(data)
+          const text = ev.choices?.[0]?.delta?.content
+          if (text) send({ type: 'text', text })
+        } catch { /* skip */ }
+      }
+    }
+  }
+  send({ type: 'done' })
+  res.end()
+}
+```
+</Tab>
+<Tab>
+```ts filename="server.ts"
+import express from 'express'
+
+const app = express()
+app.use(express.json())
+
+app.post('/api/chat', async (req, res) => {
+  const { messages } = req.body
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+
+  const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
+
+  const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, stream: true }),
+  })
+
+  const reader = upstream.body!.getReader()
+  const decoder = new TextDecoder()
+  let buf = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+    const parts = buf.split('\n\n')
+    buf = parts.pop() ?? ''
+    for (const part of parts) {
+      for (const line of part.split('\n')) {
+        if (!line.startsWith('data: ')) continue
+        const data = line.slice(6).trim()
+        if (data === '[DONE]') { send({ type: 'done' }); res.end(); return }
+        try {
+          const ev = JSON.parse(data)
+          const text = ev.choices?.[0]?.delta?.content
+          if (text) send({ type: 'text', text })
+        } catch { /* skip */ }
+      }
+    }
+  }
+  send({ type: 'done' })
+  res.end()
+})
+
+app.listen(3000)
+```
+</Tab>
+</Tabs>
+
+### Use the hook in your component
+
+```tsx filename="app/page.tsx"
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',
+  })
+
+  return (
+    <div style={{ height: '80vh' }}>
+      <Chat
+        messages={messages}
+        onSend={sendMessage}
+        onStop={stop}
+        loading={loading}
+      />
+    </div>
+  )
+}
+```
+
+### Done
+
+That's it. You now have a streaming AI chat backed by any provider.
+
+</Steps>
+
+## Without the UI package
+
+If you're bringing your own components, skip `@react-ai-stream/ui` entirely — the hook has no UI dependency:
+
+```tsx
+'use client'
+import { useState } from 'react'
+import { useAIChat } from '@react-ai-stream/react'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',
+  })
+  const [input, setInput] = useState('')
+
+  return (
+    <div>
+      <div>
+        {messages.map((m) => (
+          <p key={m.id}><b>{m.role}:</b> {m.content}</p>
+        ))}
+      </div>
+      <form onSubmit={(e) => { e.preventDefault(); sendMessage(input); setInput('') }}>
+        <input value={input} onChange={(e) => setInput(e.target.value)} disabled={loading} />
+        {loading
+          ? <button type="button" onClick={stop}>Stop</button>
+          : <button type="submit">Send</button>}
+      </form>
+    </div>
+  )
+}
+```
+
+See the [minimal example](/examples/minimal) for the full working version, and [custom UI](/examples/custom-ui) for a Tailwind implementation with a model switcher.
+
+## Next steps
+
+- [Providers](/providers) — Anthropic, OpenAI, Groq, or your own backend
+- [Hook architecture](/concepts/hook-architecture) — how isolated message stores work
+- [useAIChat API reference](/api/useaichat) — all options and return values
+- [Custom UI example](/examples/custom-ui) — wire the hook to your design system

@@ -1,0 +1,94 @@
+---
+title: Minimal example
+description: useAIChat with plain HTML, no UI package
+---
+
+# Minimal example
+
+The smallest possible integration. `useAIChat` with plain HTML — no `@react-ai-stream/ui` dependency.
+
+**Source:** [`apps/nextjs-basic`](https://github.com/trimooo/react-ai-stream/tree/master/apps/nextjs-basic)
+
+## Run locally
+
+```bash
+cd apps/nextjs-basic
+cp .env.local.example .env.local  # add GROQ_API_KEY
+pnpm dev  # http://localhost:3001
+```
+
+## The full page
+
+```tsx filename="app/page.tsx"
+'use client'
+
+import { useRef, useState } from 'react'
+import { useAIChat } from '@react-ai-stream/react'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop, error } = useAIChat({
+    endpoint: '/api/chat',
+  })
+  const [input, setInput] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const text = input.trim()
+    if (!text || loading) return
+    setInput('')
+    sendMessage(text).then(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    })
+  }
+
+  return (
+    <div style={{ maxWidth: 680, margin: '40px auto', padding: '0 16px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            style={{
+              alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              background: msg.role === 'user' ? '#2563eb' : '#f3f4f6',
+              color: msg.role === 'user' ? '#fff' : '#111',
+              borderRadius: 12,
+              padding: '10px 14px',
+              maxWidth: '80%',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {msg.content}
+          </div>
+        ))}
+        {loading && <div style={{ color: '#9ca3af' }}>Thinking…</div>}
+        {error && <div style={{ color: '#ef4444' }}>Error: {error}</div>}
+        <div ref={bottomRef} />
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={loading}
+          placeholder="Type a message…"
+          style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #d1d5db' }}
+        />
+        {loading
+          ? <button type="button" onClick={stop}>Stop</button>
+          : <button type="submit" disabled={!input.trim()}>Send</button>}
+      </form>
+    </div>
+  )
+}
+```
+
+## What this demonstrates
+
+- `useAIChat` needs zero UI package — install only `@react-ai-stream/react`
+- `messages`, `loading`, `error`, `stop` are all you need to build any chat UI
+- The hook is stateless from the component's perspective — no `useState` for messages
+
+## Next step
+
+See [Custom UI](/examples/custom-ui) for a Tailwind implementation with a model switcher sidebar.

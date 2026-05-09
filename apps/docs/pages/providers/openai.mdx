@@ -1,0 +1,125 @@
+---
+title: OpenAI & compatible
+---
+
+import { Callout, Tabs, Tab } from 'nextra/components'
+
+# OpenAI & compatible
+
+Works with OpenAI, Groq, Together AI, Fireworks, Mistral, and any OpenAI-compatible API.
+
+## Via API route (recommended)
+
+```ts filename="app/api/chat/route.ts"
+export const runtime = 'edge'
+
+export async function POST(req: Request) {
+  const { messages } = await req.json()
+
+  const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({ model: 'gpt-4o-mini', messages, stream: true }),
+  })
+
+  const enc = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (d: object) => controller.enqueue(enc.encode(`data: ${JSON.stringify(d)}\n\n`))
+      const reader = upstream.body!.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+        for (const part of parts) {
+          for (const line of part.split('\n')) {
+            if (!line.startsWith('data: ')) continue
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') { send({ type: 'done' }); controller.close(); return }
+            try {
+              const ev = JSON.parse(data)
+              const text = ev.choices?.[0]?.delta?.content
+              if (text) send({ type: 'text', text })
+            } catch { /* skip */ }
+          }
+        }
+      }
+      send({ type: 'done' })
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+## Compatible APIs
+
+Change the base URL to use any OpenAI-compatible provider:
+
+<Tabs items={['Groq', 'Together AI', 'Fireworks', 'Mistral']}>
+<Tab>
+```ts
+const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // ...
+  body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, stream: true }),
+})
+```
+</Tab>
+<Tab>
+```ts
+const upstream = await fetch('https://api.together.xyz/v1/chat/completions', {
+  // ...
+  body: JSON.stringify({ model: 'meta-llama/Llama-3-8b-chat-hf', messages, stream: true }),
+})
+```
+</Tab>
+<Tab>
+```ts
+const upstream = await fetch('https://api.fireworks.ai/inference/v1/chat/completions', {
+  // ...
+  body: JSON.stringify({ model: 'accounts/fireworks/models/llama-v3-70b-instruct', messages, stream: true }),
+})
+```
+</Tab>
+<Tab>
+```ts
+const upstream = await fetch('https://api.mistral.ai/v1/chat/completions', {
+  // ...
+  body: JSON.stringify({ model: 'mistral-large-latest', messages, stream: true }),
+})
+```
+</Tab>
+</Tabs>
+
+## Direct (browser)
+
+<Callout type="warning">
+  Direct mode exposes your API key in the browser. Use only for local development.
+</Callout>
+
+```tsx
+// OpenAI
+const chat = useAIChat({
+  provider: 'openai',
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
+  model: 'gpt-4o',
+})
+
+// Groq via baseURL
+const chat = useAIChat({
+  provider: 'openai',
+  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY!,
+  baseURL: 'https://api.groq.com/openai/v1',
+  model: 'llama-3.3-70b-versatile',
+})
+```

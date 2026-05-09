@@ -1,0 +1,63 @@
+---
+title: FAQ
+---
+
+# FAQ
+
+## Does this work outside Next.js?
+
+Yes. The hook works in any React app — Remix, Vite, Create React App, or plain React. Only the API route examples are Next.js-specific. Use your framework's server handler to produce the SSE stream.
+
+## Do I need `@react-ai-stream/ui`?
+
+No. `@react-ai-stream/react` has no UI dependency. You can use `useAIChat` and build your own components entirely. See the [minimal example](/examples/minimal) and [custom UI example](/examples/custom-ui).
+
+## Can I use this with shadcn/ui?
+
+Yes. The hook returns plain React state — you wire it to whatever components you want. See [Custom UI](/examples/custom-ui) for the pattern.
+
+## Does it work with React Server Components?
+
+`useAIChat` is a client hook — it requires `'use client'`. Your API route can run at the edge or as a server function. The hook itself must be in a Client Component.
+
+## How do I persist chat history?
+
+Save messages in `onComplete` and pass them to `sendMessage` on mount. The hook doesn't handle persistence — that's intentional. Store messages in your database, `localStorage`, or state management layer.
+
+```tsx
+const chat = useAIChat({
+  endpoint: '/api/chat',
+  onComplete: (message) => {
+    localStorage.setItem('chat', JSON.stringify([...chat.messages, message]))
+  },
+})
+```
+
+## Can I run multiple chats on the same page?
+
+Yes — each `useAIChat` call has a completely isolated store. No context needed. See [hook architecture](/concepts/hook-architecture).
+
+## How do I switch models at runtime?
+
+Use React's `key` prop to remount the component with a fresh hook instance:
+
+```tsx
+<ChatPanel key={selectedModel} model={selectedModel} />
+```
+
+This gives each model an isolated message history and a fresh client. See [Custom UI](/examples/custom-ui) for a complete example.
+
+## Why not use the Vercel AI SDK?
+
+Both are MIT and well-maintained. Choose based on your architecture:
+
+- **Vercel AI SDK**: best for tight Next.js integration, RSC streaming, server actions
+- **react-ai-stream**: better for portable hooks, multiple isolated chats, custom UI, non-Next.js apps
+
+## Is the API stable?
+
+The project is at `v0.1.x` — `useAIChat` options and return values may have minor changes before `v1.0`. Breaking changes will be documented in [CHANGELOG](https://github.com/trimooo/react-ai-stream/blob/master/CHANGELOG.md) and will follow semver.
+
+## How do I report a bug?
+
+Open an issue on [GitHub](https://github.com/trimooo/react-ai-stream/issues/new?template=bug_report.md) with a minimal reproduction.

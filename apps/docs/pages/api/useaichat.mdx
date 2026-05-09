@@ -1,0 +1,148 @@
+---
+title: useAIChat
+description: Full API reference for the useAIChat hook
+---
+
+# useAIChat
+
+The core hook. Manages messages, streaming state, and abort.
+
+```ts
+import { useAIChat } from '@react-ai-stream/react'
+
+const { messages, sendMessage, loading, stop, error, clearMessages } = useAIChat(options)
+```
+
+## Options
+
+### Endpoint mode (recommended for production)
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `endpoint` | `string` | yes | URL of your streaming API route |
+| `headers` | `Record<string, string>` | no | Extra headers sent with every request |
+| `body` | `Record<string, unknown>` | no | Extra fields merged into every request body |
+
+```tsx
+const chat = useAIChat({
+  endpoint: '/api/chat',
+  headers: { 'X-Session-Id': sessionId },
+  body: { persona: 'support-agent', temperature: 0.7 },
+})
+```
+
+### Direct provider mode
+
+import { Callout } from 'nextra/components'
+
+<Callout type="warning">
+  Direct provider mode exposes your API key in the browser. Use only for local development or trusted environments.
+</Callout>
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `provider` | `'openai' \| 'anthropic'` | yes | Provider name |
+| `apiKey` | `string` | yes | API key |
+| `model` | `string` | no | Model name (provider default if omitted) |
+| `baseURL` | `string` | no | Override base URL (OpenAI-compatible APIs) |
+| `maxTokens` | `number` | no | Max tokens (Anthropic only) |
+| `system` | `string` | no | System prompt |
+
+```tsx
+// Anthropic direct
+const chat = useAIChat({
+  provider: 'anthropic',
+  apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
+  model: 'claude-sonnet-4-6',
+  maxTokens: 2048,
+  system: 'You are a helpful assistant.',
+})
+
+// OpenAI-compatible (Groq, Together, etc.)
+const chat = useAIChat({
+  provider: 'openai',
+  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY!,
+  baseURL: 'https://api.groq.com/openai/v1',
+  model: 'llama-3.3-70b-versatile',
+})
+```
+
+### Client mode
+
+Bring a pre-built client, for example from `AIChatProvider` context:
+
+| Option | Type | Description |
+|---|---|---|
+| `client` | `AIClient` | Pre-built client from `createAIClient()` |
+
+```tsx
+import { createAIClient } from '@react-ai-stream/core'
+
+const client = createAIClient({ endpoint: '/api/chat' })
+
+function MyComponent() {
+  const chat = useAIChat({ client })
+}
+```
+
+### Callbacks
+
+| Option | Type | Description |
+|---|---|---|
+| `onToken` | `(token: string) => void` | Called for each streamed text delta |
+| `onComplete` | `(message: Message) => void` | Called once when streaming ends |
+| `onError` | `(error: Error) => void` | Called on stream or provider errors |
+
+```tsx
+const chat = useAIChat({
+  endpoint: '/api/chat',
+  onToken: (token) => setWordCount((n) => n + token.split(/\s+/).length),
+  onComplete: (message) => db.save(message),
+  onError: (err) => Sentry.captureException(err),
+})
+```
+
+## Return values
+
+| Value | Type | Description |
+|---|---|---|
+| `messages` | `Message[]` | Full conversation history |
+| `sendMessage` | `(content: string) => Promise<void>` | Send a user message and start streaming |
+| `loading` | `boolean` | `true` while a stream is in progress |
+| `stop` | `() => void` | Abort the in-flight stream |
+| `error` | `string \| null` | Last error message, `null` if no error |
+| `clearMessages` | `() => void` | Reset the conversation (does not abort) |
+
+## Message shape
+
+```ts
+interface Message {
+  id: string       // crypto.randomUUID()
+  role: 'user' | 'assistant' | 'system' | 'tool'
+  content: string  // full text (grows during streaming)
+  createdAt: Date
+}
+```
+
+## Behavior notes
+
+- `sendMessage` is a no-op if `loading` is `true`
+- `stop()` preserves the partial response in `messages`
+- `clearMessages()` does not abort an in-flight stream; call `stop()` first if needed
+- The AI client is created lazily on the first `sendMessage` call and cached for the component's lifetime
+- On unmount, any in-flight stream is automatically aborted
+
+## TypeScript
+
+All types are exported from `@react-ai-stream/core`:
+
+```ts
+import type {
+  Message,
+  UseAIChatOptions,
+  UseAIChatCallbacks,
+  UseAIChatReturn,
+  AIClient,
+  CreateClientOptions,
+} from '@react-ai-stream/core'
+```

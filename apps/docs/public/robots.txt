@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://react-ai-stream-docs.vercel.app/sitemap.xml

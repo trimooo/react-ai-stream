@@ -1,0 +1,85 @@
+---
+title: Anthropic
+---
+
+import { Callout } from 'nextra/components'
+
+# Anthropic
+
+Use Claude via a server-side API route (recommended) or directly from the browser.
+
+## Via API route (recommended)
+
+```ts filename="app/api/chat/route.ts"
+export const runtime = 'edge'
+
+export async function POST(req: Request) {
+  const { messages } = await req.json()
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY!,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: messages.filter((m: { role: string }) => m.role !== 'system'),
+      stream: true,
+    }),
+  })
+
+  const enc = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (d: object) => controller.enqueue(enc.encode(`data: ${JSON.stringify(d)}\n\n`))
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+        for (const part of parts) {
+          for (const line of part.split('\n')) {
+            if (!line.startsWith('data: ')) continue
+            try {
+              const ev = JSON.parse(line.slice(6))
+              if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta')
+                send({ type: 'text', text: ev.delta.text })
+              else if (ev.type === 'message_stop')
+                send({ type: 'done' })
+            } catch { /* skip */ }
+          }
+        }
+      }
+      send({ type: 'done' })
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+## Direct (browser)
+
+<Callout type="warning">
+  Direct mode exposes your API key in the browser bundle. Use only for local development.
+</Callout>
+
+```tsx
+const chat = useAIChat({
+  provider: 'anthropic',
+  apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
+  model: 'claude-sonnet-4-6',
+  maxTokens: 2048,
+  system: 'You are a helpful assistant.',
+})
+```

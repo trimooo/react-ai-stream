@@ -1,0 +1,78 @@
+---
+title: FastAPI backend
+description: Use react-ai-stream with a Python FastAPI streaming backend
+---
+
+# FastAPI backend
+
+Use a Python FastAPI server as the streaming backend. The React hook doesn't know or care what's on the other side — as long as the server emits the correct SSE format.
+
+## FastAPI server
+
+```python filename="main.py"
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+import anthropic
+import json
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
+
+client = anthropic.Anthropic()
+
+async def stream_response(messages: list[dict]):
+    with client.messages.stream(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=messages,
+    ) as stream:
+        for text in stream.text_stream:
+            yield f"data: {json.dumps({'type': 'text', 'text': text})}\n\n"
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+@app.post("/api/chat")
+async def chat(body: dict):
+    messages = body.get("messages", [])
+    return StreamingResponse(
+        stream_response(messages),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache"},
+    )
+```
+
+```bash
+pip install fastapi anthropic uvicorn
+uvicorn main:app --reload --port 8000
+```
+
+## React component
+
+Point `endpoint` at your FastAPI server:
+
+```tsx
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: 'http://localhost:8000/api/chat',
+  })
+
+  return (
+    <div style={{ height: '80vh' }}>
+      <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
+    </div>
+  )
+}
+```
+
+The same pattern works with Django, Flask, Rails, Go, or any server that can write `text/event-stream` responses.

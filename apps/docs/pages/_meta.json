@@ -1,0 +1,35 @@
+{
+  "index": "Introduction",
+  "quickstart": "Quickstart",
+  "---concepts": {
+    "type": "separator",
+    "title": "Concepts"
+  },
+  "concepts": "Concepts",
+  "---providers": {
+    "type": "separator",
+    "title": "Providers"
+  },
+  "providers": "Providers",
+  "---ui": {
+    "type": "separator",
+    "title": "UI Components"
+  },
+  "ui": {
+    "title": "UI Components",
+    "href": "/ui"
+  },
+  "---examples": {
+    "type": "separator",
+    "title": "Examples"
+  },
+  "examples": "Examples",
+  "---api": {
+    "type": "separator",
+    "title": "Reference"
+  },
+  "api": "API Reference",
+  "architecture": "Architecture",
+  "recipes": "Recipes",
+  "faq": "FAQ"
+}

@@ -1,0 +1,55 @@
+---
+title: Types
+---
+
+# Types
+
+All types are exported from `@react-ai-stream/core`:
+
+```ts
+import type { Message, Role, AIClient, StreamChunk } from '@react-ai-stream/core'
+```
+
+## Message
+
+```ts
+interface Message {
+  id: string
+  role: Role
+  content: string
+  createdAt: Date
+}
+```
+
+## Role
+
+```ts
+type Role = 'user' | 'assistant' | 'system' | 'tool'
+```
+
+## StreamChunk
+
+The internal format that providers yield:
+
+```ts
+type StreamChunk =
+  | { type: 'text'; text: string }
+  | { type: 'done' }
+  | { type: 'error'; error: string }
+```
+
+This is the same format your custom endpoint should emit as SSE data.
+
+## AIClient
+
+```ts
+interface AIClient {
+  provider: AIProvider
+}
+
+interface AIProvider {
+  stream(messages: Message[], signal: AbortSignal): AsyncIterable<StreamChunk>
+}
+```
+
+`AIClient` is what `createAIClient` returns and what `useAIChat({ client })` accepts.

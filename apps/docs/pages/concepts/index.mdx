@@ -1,0 +1,19 @@
+---
+title: Concepts
+---
+
+# Concepts
+
+Understanding these three ideas will make everything else click.
+
+## [Why backend-agnostic?](/concepts/why-backend-agnostic)
+
+Most AI chat libraries are secretly backend libraries. `react-ai-stream` is different: the hook speaks a simple SSE protocol that any server can produce. Your LLM, your infra, your API keys — the hook doesn't care.
+
+## [Streaming lifecycle](/concepts/streaming-lifecycle)
+
+When a message is sent, tokens arrive incrementally and are appended to the message in real time. Understanding the lifecycle — `onToken`, `onComplete`, `onError`, abort — helps you write correct side-effects.
+
+## [Hook architecture](/concepts/hook-architecture)
+
+Every `useAIChat` call creates a completely isolated message store. Multiple chat instances on the same page never share state. No context providers needed unless you explicitly want shared state.

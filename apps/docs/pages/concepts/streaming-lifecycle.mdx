@@ -1,0 +1,116 @@
+---
+title: Streaming lifecycle
+description: How messages, tokens, and events flow through the hook
+---
+
+import { StreamingPipelineDiagram } from '../../components/ArchDiagram'
+
+# Streaming lifecycle
+
+Understanding the streaming lifecycle helps you write correct side-effects and handle edge cases.
+
+<StreamingPipelineDiagram />
+
+## Timeline
+
+```
+sendMessage("Hello")
+  │
+  ├─ userMessage added to store
+  ├─ loading → true
+  ├─ empty assistantMessage placeholder added
+  │
+  └─ POST /api/chat opens SSE connection
+       │
+       ├─ data: {"type":"text","text":"Hi"}
+       │    onToken("Hi") fires
+       │    assistantMessage.content → "Hi"
+       │
+       ├─ data: {"type":"text","text":"!"}
+       │    onToken("!") fires
+       │    assistantMessage.content → "Hi!"
+       │
+       └─ data: {"type":"done"}
+            onComplete({ role: 'assistant', content: 'Hi!' }) fires
+            loading → false
+```
+
+## State during streaming
+
+While a stream is in progress:
+
+| State | Value |
+|---|---|
+| `messages` | Contains the growing assistant message |
+| `loading` | `true` |
+| `error` | `null` (unless a chunk error arrives) |
+
+The assistant message's `content` property grows in real time with each token. Components that render `message.content` update automatically via React's state subscription.
+
+## Event callbacks
+
+All callbacks are optional. Use them for side-effects that need to react to streaming events:
+
+```tsx
+const chat = useAIChat({
+  endpoint: '/api/chat',
+
+  onToken(token) {
+    // Fires for each text chunk — token is the DELTA, not cumulative
+    wordCount.current += token.split(/\s+/).length
+  },
+
+  onComplete(message) {
+    // Fires once when streaming ends
+    // message.content is the full, final response
+    await db.saveMessage({ role: message.role, content: message.content })
+  },
+
+  onError(error) {
+    Sentry.captureException(error)
+  },
+})
+```
+
+## Abort
+
+Calling `stop()` aborts the HTTP request mid-stream using the browser's `AbortController`:
+
+```
+stop()
+  │
+  ├─ AbortController.abort() fires
+  ├─ fetch throws AbortError (caught internally, not surfaced as error)
+  ├─ loading → false
+  └─ assistantMessage.content stays at whatever was accumulated
+```
+
+The partial response is preserved — it is never cleared. Users can see how far the stream got before stopping.
+
+## Error handling
+
+Errors are surfaced in two ways simultaneously:
+
+1. `error` string is set in the hook's return value — render it directly
+2. `onError` callback fires with an `Error` object — use for analytics, logging, Sentry
+
+```tsx
+const { messages, sendMessage, loading, error } = useAIChat({
+  endpoint: '/api/chat',
+  onError: (err) => Sentry.captureException(err),
+})
+
+if (error) return <div className="error">Error: {error}</div>
+```
+
+Server errors (non-2xx responses) and stream-level errors (`{"type":"error","error":"..."}`) both go through this path.
+
+## Concurrency
+
+`sendMessage` is a no-op if `loading` is already `true`. You cannot start two concurrent streams on the same hook instance. To run parallel streams, use multiple `useAIChat` calls — each has its own isolated store and abort controller.
+
+```tsx
+// These stream concurrently — isolated stores, no interference
+const claudeChat = useAIChat({ endpoint: '/api/chat?provider=anthropic' })
+const gptChat    = useAIChat({ endpoint: '/api/chat?provider=openai' })
+```

@@ -1,0 +1,95 @@
+---
+title: Hook architecture
+description: Isolated stores, no global state, and how context works
+---
+
+# Hook architecture
+
+## Isolated stores
+
+Every `useAIChat` call creates an independent message store:
+
+```tsx
+function ComparisonPage() {
+  // Two completely isolated chats — different messages, different loading state
+  const claude = useAIChat({ endpoint: '/api/chat?provider=anthropic' })
+  const gpt    = useAIChat({ endpoint: '/api/chat?provider=openai' })
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+      <Chat messages={claude.messages} onSend={claude.sendMessage} loading={claude.loading} />
+      <Chat messages={gpt.messages}    onSend={gpt.sendMessage}    loading={gpt.loading} />
+    </div>
+  )
+}
+```
+
+The stores are backed by [Zustand](https://zustand-demo.pmnd.rs/) — a lightweight state manager that uses React's `useSyncExternalStore` for subscription. No React context, no re-render of unrelated components.
+
+## What isolation means in practice
+
+| Behavior | Isolated (default) |
+|---|---|
+| `sendMessage` in chat A triggers re-render in chat B | No |
+| `loading` in chat A affects chat B | No |
+| `stop()` in chat A aborts chat B | No |
+| Multiple chats per page | ✓ supported out of the box |
+| No provider wrapping required | ✓ |
+
+## Sharing a client via context
+
+If you want multiple components to share a single AI client (same endpoint config, same auth headers), use `AIChatProvider`:
+
+```tsx
+import { createAIClient } from '@react-ai-stream/core'
+import { AIChatProvider, useAIChat } from '@react-ai-stream/react'
+
+const client = createAIClient({
+  endpoint: '/api/chat',
+  headers: { 'X-Session-Id': sessionId },
+})
+
+function App() {
+  return (
+    <AIChatProvider client={client}>
+      <MainChat />
+      <SidebarChat />
+    </AIChatProvider>
+  )
+}
+```
+
+Note: even with a shared client, each `useAIChat` call has its own message store. Sharing the client means sharing the *configuration*, not the *state*.
+
+## Client caching
+
+The `AIClient` (which holds the provider config and endpoint) is created once per `useAIChat` instance and cached for the component's lifetime. This means:
+
+- No redundant client construction on re-renders
+- The endpoint and headers are captured at initialization time
+
+If you need to change the endpoint dynamically (e.g., a model switcher), use React's `key` prop to remount the component:
+
+```tsx
+function Page() {
+  const [model, setModel] = useState('llama-3.3-70b-versatile')
+  return (
+    <div>
+      <ModelPicker value={model} onChange={setModel} />
+      {/* key remounts ChatPanel → fresh useAIChat instance with new endpoint */}
+      <ChatPanel key={model} endpoint={`/api/chat?model=${model}`} />
+    </div>
+  )
+}
+```
+
+This is the standard React pattern for resetting component state. The `apps/custom-ui` example demonstrates it in practice.
+
+## Store lifetime
+
+The message store lives as long as the component that created it. When the component unmounts:
+
+- Any in-flight stream is aborted automatically
+- The message history is discarded
+
+To persist messages across unmounts (e.g., chat history in a sidebar), save to `localStorage` or your database in `onComplete`, and seed the initial messages from there on mount.

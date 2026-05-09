@@ -1,0 +1,91 @@
+---
+title: Custom UI (Tailwind)
+description: useAIChat wired to fully custom Tailwind components
+---
+
+# Custom UI (Tailwind)
+
+`useAIChat` wired to completely custom Tailwind components — model switcher sidebar, custom message bubbles, auto-expanding textarea. No `@react-ai-stream/ui` dependency.
+
+**Source:** [`apps/custom-ui`](https://github.com/trimooo/react-ai-stream/tree/master/apps/custom-ui)
+
+## Run locally
+
+```bash
+cd apps/custom-ui
+cp .env.local.example .env.local  # add GROQ_API_KEY
+pnpm dev  # http://localhost:3002
+```
+
+## Architecture
+
+```
+Page
+  ├── Sidebar (model selector)
+  └── ChatPanel (key={activeModel})
+        ├── useAIChat({ endpoint: `/api/chat?model=${model}` })
+        ├── MessageBubble (avatar + timestamp)
+        └── ChatInput (auto-resize textarea, send/stop)
+```
+
+The `key={activeModel}` on `ChatPanel` remounts the component when the model changes. This gives each model a fresh `useAIChat` instance — isolated message history, fresh client, no stale state.
+
+## Model switcher pattern
+
+```tsx filename="app/page.tsx"
+'use client'
+import { useState } from 'react'
+import { Sidebar } from '@/components/Sidebar'
+import { ChatPanel } from '@/components/ChatPanel'
+
+const MODELS = [
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B', tag: 'Best quality' },
+  { id: 'llama-3.1-8b-instant',    name: 'Llama 3.1 8B',  tag: 'Fastest' },
+] as const
+
+export default function Page() {
+  const [activeModelId, setActiveModelId] = useState(MODELS[0].id)
+  const activeModel = MODELS.find((m) => m.id === activeModelId)!
+
+  return (
+    <div className="flex h-full">
+      <Sidebar models={MODELS} activeModel={activeModelId} onModelChange={setActiveModelId} />
+      {/* key remounts ChatPanel → fresh useAIChat per model */}
+      <ChatPanel key={activeModelId} model={activeModel} />
+    </div>
+  )
+}
+```
+
+## ChatPanel
+
+```tsx filename="components/ChatPanel.tsx"
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { MessageBubble } from './MessageBubble'
+import { ChatInput } from './ChatInput'
+
+export function ChatPanel({ model }: { model: { id: string; name: string } }) {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: `/api/chat?model=${encodeURIComponent(model.id)}`,
+  })
+
+  return (
+    <div className="flex-1 flex flex-col">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} />
+        ))}
+      </div>
+      <ChatInput onSend={sendMessage} onStop={stop} loading={loading} />
+    </div>
+  )
+}
+```
+
+## What this demonstrates
+
+- The hook has no opinion about styling — use Tailwind, CSS Modules, styled-components, or anything
+- Model switching via `key` prop is a standard React pattern, not a library-specific API
+- `Message` type from `@react-ai-stream/core` is the only type you need from the library for custom rendering
+- This approach scales to shadcn/ui, Chakra, Radix UI, or any component library

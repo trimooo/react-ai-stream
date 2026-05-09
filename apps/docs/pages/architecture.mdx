@@ -1,0 +1,129 @@
+---
+title: Architecture
+description: How react-ai-stream works under the hood
+---
+
+import { ProviderAbstractionDiagram, StreamingPipelineDiagram } from '../components/ArchDiagram'
+
+# Architecture
+
+## Provider abstraction
+
+<ProviderAbstractionDiagram />
+
+The hook speaks a simple HTTP + SSE protocol. Any server that produces that stream works — regardless of which LLM or which language. See [Why backend-agnostic?](/concepts/why-backend-agnostic)
+
+## Streaming pipeline
+
+<StreamingPipelineDiagram />
+
+See [Streaming lifecycle](/concepts/streaming-lifecycle) for full details on callbacks and abort behavior.
+
+## Text diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Browser                                                     │
+│                                                             │
+│   useAIChat()                                               │
+│     │                                                       │
+│     ├── MessageStore (Zustand)                              │
+│     │     messages[], loading, error, abortController       │
+│     │                                                       │
+│     └── AIClient                                            │
+│           │                                                 │
+│           └── CustomProvider / OpenAIProvider / AnthropicProvider
+│                 │                                           │
+│                 └── fetch(endpoint, { body, signal })       │
+│                                                             │
+└──────────────────────────┬──────────────────────────────────┘
+                           │  HTTP POST (SSE)
+┌──────────────────────────┼──────────────────────────────────┐
+│  Your server             │                                   │
+│                          ▼                                  │
+│   /api/chat  →  [any LLM provider]                          │
+│                          │                                  │
+│                          └─ data: {"type":"text","text":"…"} │
+│                             data: {"type":"done"}            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Packages
+
+### `@react-ai-stream/core`
+
+No React dependency. Can run in Node.js, Deno, or any JS environment.
+
+- **SSE parser** — converts `ReadableStream<Uint8Array>` to `AsyncIterable<string>`
+- **Chunk normalizer** — maps provider-specific events to `StreamChunk`
+- **Providers** — `OpenAIProvider`, `AnthropicProvider`, `CustomProvider`
+- **Message store** — Zustand store factory; `createMessageStore()` returns an isolated store
+- **Abort utilities** — thin wrapper around `AbortController`
+
+### `@react-ai-stream/react`
+
+Depends on `@react-ai-stream/core` and React.
+
+- **`useAIChat`** — subscribes to the message store via `useSyncExternalStore`; orchestrates the streaming lifecycle
+- **`AIChatProvider`** — React context for sharing a pre-built `AIClient`
+- **`useStableCallback`** — a stable function reference that always calls the latest closure, used internally to prevent stale closures in async stream loops
+
+### `@react-ai-stream/ui`
+
+Depends on `@react-ai-stream/react`. Optional — you can use `@react-ai-stream/react` alone.
+
+- **`Chat`** — all-in-one component: `MessageList` + `ChatInput`
+- **`MessageList`** — renders messages with a typing indicator
+- **`MessageBubble`** — individual message with role-based styling
+- **`ChatInput`** — auto-resizing textarea, send/stop buttons
+- **`MarkdownRenderer`** — renders GFM markdown via `react-markdown` with syntax highlighting
+
+## Streaming pipeline
+
+```
+Response body (ReadableStream)
+  │
+  └─ SSE parser
+       Splits on \n\n, yields "data: ..." lines
+       │
+       └─ Chunk normalizer
+            Parses JSON, maps to StreamChunk
+            │
+            └─ useAIChat stream loop (AsyncIterable)
+                 For each chunk:
+                   'text'  → store.updateLastAssistantMessage(accumulated)
+                   'done'  → onComplete fires, loading → false
+                   'error' → store.setError(), onError fires
+```
+
+## State management
+
+Each `useAIChat` instance owns a Zustand store created by `createMessageStore()`. The store holds:
+
+```ts
+{
+  messages: Message[]
+  loading: boolean
+  error: string | null
+  abortController: AbortController | null
+}
+```
+
+`useSyncExternalStore` subscribes to this store. Only the component that called `useAIChat` re-renders when its store updates — no context propagation, no unnecessary renders in sibling components.
+
+## Why Zustand instead of useReducer or useState?
+
+Zustand's `useSyncExternalStore` integration allows the store to live outside the React tree. This means:
+
+- The store can be created without rendering
+- Multiple components can subscribe without a shared context
+- The store's lifecycle is tied to the hook instance, not to a provider
+
+This is what enables truly isolated chat instances without any wrapping context.
+
+## Abort semantics
+
+Every `sendMessage` call creates a new `AbortController`. The signal is passed to `fetch`. When `stop()` is called or the component unmounts, `abort()` fires and the fetch throws `AbortError`. This is caught internally — it is not surfaced as a user-facing error.
+
+The partial response accumulated before abort is preserved in `messages`. It is not cleared.

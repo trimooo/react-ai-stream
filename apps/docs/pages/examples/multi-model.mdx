@@ -1,0 +1,76 @@
+---
+title: Multi-model
+---
+
+# Multi-model
+
+Three models streaming in parallel. The live demo at [react-ai-stream-example.vercel.app](https://react-ai-stream-example.vercel.app).
+
+**Source:** [`apps/example`](https://github.com/trimooo/react-ai-stream/tree/master/apps/example)
+
+## Run locally
+
+```bash
+cd apps/example
+cp .env.local.example .env.local  # add GROQ_API_KEY
+pnpm dev  # http://localhost:3000
+```
+
+## Pattern
+
+Because each `useAIChat` call has an isolated store and abort controller, parallel streams require no special setup:
+
+```tsx
+'use client'
+import { useState } from 'react'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+const MODELS = [
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+] as const
+
+export function MultiModelDemo() {
+  const [input, setInput] = useState('')
+
+  const chats = MODELS.map((model) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useAIChat({ endpoint: `/api/chat?model=${encodeURIComponent(model)}` })
+  )
+
+  function sendToAll() {
+    if (!input.trim()) return
+    chats.forEach((chat) => chat.sendMessage(input))
+    setInput('')
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        {MODELS.map((model, i) => (
+          <Chat
+            key={model}
+            messages={chats[i].messages}
+            onSend={chats[i].sendMessage}
+            onStop={chats[i].stop}
+            loading={chats[i].loading}
+          />
+        ))}
+      </div>
+      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Send to all models…" />
+        <button onClick={sendToAll}>Send to all</button>
+      </div>
+    </div>
+  )
+}
+```
+
+import { Callout } from 'nextra/components'
+
+<Callout>
+  Calling hooks in a loop is valid React when the array length is fixed and stable. If the number of models can change at runtime, use a stable list rendered from a component array instead.
+</Callout>

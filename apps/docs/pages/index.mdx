@@ -1,0 +1,102 @@
+import { Callout } from 'nextra/components'
+
+# react-ai-stream
+
+**Backend-agnostic AI streaming for React.**
+
+One hook. Any provider. Drop-in UI or bring your own.
+
+```bash npm2yarn
+npm install @react-ai-stream/react
+```
+
+```tsx
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',    // any streaming endpoint
+  })
+  return <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
+}
+```
+
+→ [Get started in 5 minutes](/quickstart)
+
+---
+
+## Who this is for
+
+**SaaS teams** adding AI chat to an existing product — you already have a design system and don't want to be locked into someone else's UI.
+
+**Enterprise dashboards** that need multiple isolated chat instances on the same page — model comparisons, parallel agents, side-by-side analysis.
+
+**AI copilot builders** who want streaming primitives, not opinionated UI. Wire `useAIChat` to any interface: a floating widget, a sidebar panel, a full-page chat.
+
+**Teams with a Python, Go, or Rails backend** — the hook speaks plain HTTP + SSE. Your existing server can produce the stream. No Node.js required.
+
+**Developers evaluating LLMs** — point the hook at different endpoints, run them in parallel, compare responses side by side.
+
+---
+
+## The architecture in one sentence
+
+Your server streams SSE tokens → `useAIChat` subscribes to them → React state updates in real time.
+
+That's it. The hook doesn't know what produced the stream.
+
+---
+
+## What you get
+
+| | react-ai-stream | Vercel AI SDK |
+|---|---|---|
+| Bundle size | ~20 kB total | ~90 kB+ |
+| Framework requirement | None — plain React | Next.js optimized |
+| Multiple chat instances | Isolated per hook | Shared context |
+| Bring your own UI | First-class | No |
+| Event hooks (`onToken` etc.) | ✓ | Limited |
+| Backend requirement | None (or any server) | Yes for most features |
+| Direct provider (no server) | ✓ (dev only) | ✓ |
+
+<Callout type="info">
+  Both are MIT and well-maintained. Choose react-ai-stream when you want a portable hook with no framework opinions. Choose Vercel AI SDK when you need tight Next.js RSC integration.
+</Callout>
+
+---
+
+## What it is not
+
+react-ai-stream is not:
+
+- An agent framework
+- A RAG system
+- An orchestration engine
+- A memory or persistence layer
+
+The moment you need those, reach for [LangChain](https://js.langchain.com), [LlamaIndex](https://www.llamaindex.ai), or build your own. This library stays focused on what it's good at: **streaming AI responses into React**.
+
+---
+
+## Packages
+
+| Package | What it does | Size |
+|---|---|---|
+| `@react-ai-stream/react` | `useAIChat` hook, `AIChatProvider` context | ~8 kB |
+| `@react-ai-stream/ui` | `<Chat>`, `<MessageList>`, `<ChatInput>`, `<MarkdownRenderer>` | ~12 kB |
+| `@react-ai-stream/core` | SSE parser, providers, message store — no React dep | ~6 kB |
+
+`@react-ai-stream/react` has no dependency on `@react-ai-stream/ui`. Use the hook alone and build your own UI. See the [custom UI example](/examples/custom-ui).
+
+---
+
+## Next steps
+
+- **[Quickstart](/quickstart)** — working streaming in 5 minutes
+- **[Why backend-agnostic?](/concepts/why-backend-agnostic)** — the core architectural idea
+- **[Hook architecture](/concepts/hook-architecture)** — isolated stores, model switching
+- **[Custom UI example](/examples/custom-ui)** — hook + Tailwind, no UI package
+- **[API reference](/api/useaichat)** — all `useAIChat` options

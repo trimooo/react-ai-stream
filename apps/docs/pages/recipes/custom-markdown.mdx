@@ -1,0 +1,74 @@
+---
+title: Custom markdown rendering
+---
+
+# Custom markdown rendering
+
+Replace `MarkdownRenderer` from `@react-ai-stream/ui` with your own renderer — for a custom syntax highlight theme, LaTeX support, or different link handling.
+
+## Using react-markdown directly
+
+```tsx
+'use client'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { useAIChat } from '@react-ai-stream/react'
+import type { Message } from '@react-ai-stream/core'
+
+function MyMarkdown({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        code({ inline, className, children, ...props }) {
+          const match = /language-(\w+)/.exec(className ?? '')
+          return !inline && match ? (
+            <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div" {...props}>
+              {String(children).replace(/\n$/, '')}
+            </SyntaxHighlighter>
+          ) : (
+            <code className={className} {...props}>{children}</code>
+          )
+        },
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  )
+}
+
+function MessageBubble({ message }: { message: Message }) {
+  return (
+    <div className={`bubble bubble--${message.role}`}>
+      {message.role === 'assistant'
+        ? <MyMarkdown content={message.content} />
+        : <p>{message.content}</p>}
+    </div>
+  )
+}
+```
+
+## With KaTeX (LaTeX math)
+
+```bash npm2yarn
+npm install remark-math rehype-katex katex
+```
+
+```tsx
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
+
+function MyMarkdown({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+    >
+      {content}
+    </ReactMarkdown>
+  )
+}
+```

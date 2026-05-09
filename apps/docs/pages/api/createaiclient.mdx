@@ -1,0 +1,46 @@
+---
+title: createAIClient
+---
+
+# createAIClient
+
+Creates a reusable AI client. Accepts the same options as `useAIChat` (minus callbacks).
+
+```ts
+import { createAIClient } from '@react-ai-stream/core'
+
+const client = createAIClient(options)
+```
+
+## Usage
+
+Useful when you want to share a configured client across multiple hook instances via `AIChatProvider`:
+
+```tsx
+import { createAIClient } from '@react-ai-stream/core'
+import { AIChatProvider } from '@react-ai-stream/react'
+
+const client = createAIClient({
+  endpoint: '/api/chat',
+  headers: { 'X-Session-Id': sessionId },
+})
+
+export function App() {
+  return (
+    <AIChatProvider client={client}>
+      <MyApp />
+    </AIChatProvider>
+  )
+}
+```
+
+Or create one per model for a multi-model setup:
+
+```ts
+const claudeClient = createAIClient({ endpoint: '/api/chat?provider=anthropic' })
+const groqClient   = createAIClient({ endpoint: '/api/chat?provider=groq' })
+```
+
+## Options
+
+Accepts the same options as `useAIChat` minus callbacks. See [useAIChat options](/api/useaichat#options).

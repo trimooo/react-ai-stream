@@ -1,18 +1,33 @@
 # react-ai-stream
 
+[![CI](https://github.com/trimooo/react-ai-stream/actions/workflows/ci.yml/badge.svg)](https://github.com/trimooo/react-ai-stream/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/react?label=%40react-ai-stream%2Freact)](https://www.npmjs.com/package/@react-ai-stream/react)
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/ui?label=%40react-ai-stream%2Fui)](https://www.npmjs.com/package/@react-ai-stream/ui)
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/core?label=%40react-ai-stream%2Fcore)](https://www.npmjs.com/package/@react-ai-stream/core)
+[![npm downloads](https://img.shields.io/npm/dm/@react-ai-stream/react?label=downloads)](https://www.npmjs.com/package/@react-ai-stream/react)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@react-ai-stream/react)](https://bundlephobia.com/package/@react-ai-stream/react)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
 [![Live demo](https://img.shields.io/badge/live%20demo-react--ai--stream.vercel.app-6366f1)](https://react-ai-stream-example.vercel.app/)
 
-Stream AI responses into your React app in under a minute.
+**Backend-agnostic AI streaming for React.** One hook. Any provider. Drop-in UI or bring your own.
 
 - **One hook** — `useAIChat` manages messages, loading state, abort, and errors
 - **Any backend** — Anthropic, OpenAI, Groq, or your own streaming endpoint
 - **Optional UI** — drop-in `<Chat />` component or wire the hook to your own design
 - **Event hooks** — `onToken`, `onComplete`, `onError` for side-effects without extra state
 - **TypeScript first** — strict types, full DTS, ESM + CJS
+
+## Who this is for
+
+**SaaS teams** adding AI chat to an existing product — you already have a design system, you don't want to be locked into ours.
+
+**Enterprise dashboards** that need multiple isolated chat instances on the same page — model comparisons, parallel streams, side-by-side analysis.
+
+**AI copilot builders** who want streaming primitives, not opinions. Wire `useAIChat` to any interface: a sidebar, a floating widget, a full-page chat.
+
+**Teams with a Python, Go, or Rails backend** — the hook speaks plain HTTP + SSE. Your existing server can produce the stream. No Node.js required.
+
+> Not for: agent systems, RAG, orchestration, or memory platforms. This library stays focused on streaming AI responses into React.
 
 ```tsx
 // 1. npm install @react-ai-stream/react @react-ai-stream/ui

@@ -1,0 +1,120 @@
+---
+title: Custom endpoint
+---
+
+import { Callout } from 'nextra/components'
+
+# Custom endpoint
+
+The recommended approach for production. Your server acts as a proxy — it holds API keys, handles auth, and routes to any LLM.
+
+## SSE protocol
+
+Your endpoint must stream Server-Sent Events in this format:
+
+```
+data: {"type":"text","text":"Hello"}
+data: {"type":"text","text":", world"}
+data: {"type":"done"}
+```
+
+| Event | When to emit |
+|---|---|
+| `{"type":"text","text":"..."}` | Each token or text delta |
+| `{"type":"done"}` | When the LLM response is complete |
+| `{"type":"error","error":"..."}` | On provider or processing errors |
+
+## Request shape
+
+The hook sends a `POST` request with:
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Hello" }
+  ]
+}
+```
+
+Extra fields merged via the `body` option are included:
+
+```tsx
+const chat = useAIChat({
+  endpoint: '/api/chat',
+  body: { persona: 'support-agent', temperature: 0.7 },
+})
+// sends: { messages: [...], persona: 'support-agent', temperature: 0.7 }
+```
+
+## Example: Next.js App Router
+
+```ts filename="app/api/chat/route.ts"
+import { NextRequest } from 'next/server'
+
+export const runtime = 'edge'
+
+export async function POST(req: NextRequest) {
+  const { messages } = await req.json()
+
+  const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, stream: true }),
+  })
+
+  const enc = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (d: object) => controller.enqueue(enc.encode(`data: ${JSON.stringify(d)}\n\n`))
+      const reader = upstream.body!.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        for (const part of buf.split('\n\n')) {
+          buf = ''
+          for (const line of part.split('\n')) {
+            if (!line.startsWith('data: ')) continue
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') { send({ type: 'done' }); controller.close(); return }
+            try {
+              const ev = JSON.parse(data)
+              const text = ev.choices?.[0]?.delta?.content
+              if (text) send({ type: 'text', text })
+            } catch { /* skip */ }
+          }
+        }
+      }
+      send({ type: 'done' })
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+## Extra headers
+
+Pass additional headers with every request:
+
+```tsx
+const chat = useAIChat({
+  endpoint: '/api/chat',
+  headers: {
+    'Authorization': `Bearer ${userToken}`,
+    'X-Session-Id': sessionId,
+  },
+})
+```
+
+<Callout>
+  Headers are sent on every `sendMessage` call. For dynamic headers (e.g., a rotating token), use a closure that captures the latest value — the hook re-reads `headers` from `options` on each send.
+</Callout>

@@ -1,0 +1,86 @@
+---
+title: Persist chat state
+---
+
+# Persist chat state
+
+The hook doesn't persist messages — that's intentional. Here are the common patterns.
+
+## localStorage (simple)
+
+```tsx
+'use client'
+import { useEffect } from 'react'
+import { useAIChat } from '@react-ai-stream/react'
+import type { Message } from '@react-ai-stream/core'
+
+const STORAGE_KEY = 'chat-history'
+
+function loadMessages(): Message[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    // Restore Date objects from JSON
+    return (JSON.parse(raw) as Message[]).map((m) => ({
+      ...m,
+      createdAt: new Date(m.createdAt),
+    }))
+  } catch {
+    return []
+  }
+}
+
+export function PersistentChat() {
+  const { messages, sendMessage, loading, stop, clearMessages } = useAIChat({
+    endpoint: '/api/chat',
+    onComplete: (message) => {
+      // Save after each completed assistant response
+      const all = [...messages, message]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+    },
+  })
+
+  // Seed from localStorage on mount
+  useEffect(() => {
+    const saved = loadMessages()
+    if (saved.length > 0) {
+      // Send a dummy "replay" — or better, use a future initialMessages API
+      // For now, restore via store directly if needed
+    }
+  }, [])
+
+  function handleClear() {
+    clearMessages()
+    localStorage.removeItem(STORAGE_KEY)
+  }
+
+  return (
+    <div>
+      {messages.map((m) => <p key={m.id}>{m.role}: {m.content}</p>)}
+      <button onClick={handleClear}>Clear history</button>
+    </div>
+  )
+}
+```
+
+## Database (production)
+
+For server-side persistence, save in `onComplete` and load messages as the initial conversation:
+
+```tsx
+const { messages, sendMessage, loading } = useAIChat({
+  endpoint: '/api/chat',
+  onComplete: async (message) => {
+    await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, message }),
+    })
+  },
+})
+
+// Load past messages into the API route's messages array
+// (send them as part of the context on each request)
+```
+
+The simplest approach: pass saved messages as part of the request body via the `body` option, and have your API route include them as historical context when calling the LLM.

@@ -1,0 +1,39 @@
+---
+title: Providers
+---
+
+# Providers
+
+`react-ai-stream` works with any streaming HTTP endpoint. Choose the setup that fits your stack.
+
+## Endpoint mode (recommended)
+
+Your server handles provider selection. The hook sends `POST /api/chat` and reads SSE. Your API route decides which LLM to call.
+
+```tsx
+const chat = useAIChat({ endpoint: '/api/chat' })
+```
+
+→ [Custom endpoint](/providers/custom-endpoint)
+
+## Built-in providers (direct, no server)
+
+Built-in providers stream directly from the browser. Convenient for prototypes, but **your API key is visible in the browser**.
+
+```tsx
+// Anthropic
+const chat = useAIChat({ provider: 'anthropic', apiKey: '...', model: 'claude-sonnet-4-6' })
+
+// OpenAI
+const chat = useAIChat({ provider: 'openai', apiKey: '...', model: 'gpt-4o' })
+
+// Groq (OpenAI-compatible)
+const chat = useAIChat({
+  provider: 'openai',
+  apiKey: '...',
+  baseURL: 'https://api.groq.com/openai/v1',
+  model: 'llama-3.3-70b-versatile',
+})
+```
+
+→ [Anthropic](/providers/anthropic) · [OpenAI & compatible](/providers/openai)

@@ -1,0 +1,39 @@
+---
+title: Examples
+---
+
+# Examples
+
+All examples are in the [GitHub repo](https://github.com/trimooo/react-ai-stream/tree/master/apps) and runnable locally.
+
+## [Minimal](/examples/minimal)
+
+The smallest possible integration — `useAIChat` wired to plain HTML inputs. No UI package. Shows the core primitive.
+
+```bash
+cd apps/nextjs-basic
+cp .env.local.example .env.local  # add GROQ_API_KEY
+pnpm dev
+```
+
+## [Custom UI (Tailwind)](/examples/custom-ui)
+
+`useAIChat` wired to a fully custom Tailwind UI — model switcher sidebar, custom message bubbles with avatars, auto-expanding textarea. No `@react-ai-stream/ui` dependency.
+
+This is the key example for teams using shadcn/ui, Chakra, or any design system.
+
+```bash
+cd apps/custom-ui
+cp .env.local.example .env.local  # add GROQ_API_KEY
+pnpm dev
+```
+
+## [Multi-model](/examples/multi-model)
+
+Three models streaming in parallel — the live demo at [react-ai-stream-example.vercel.app](https://react-ai-stream-example.vercel.app).
+
+```bash
+cd apps/example
+cp .env.local.example .env.local  # add GROQ_API_KEY
+pnpm dev
+```
