@@ -191,8 +191,8 @@ importers:
   packages/react:
     dependencies:
       '@react-ai-stream/core':
-        specifier: ^0.1.2
-        version: 0.1.2(@types/react@19.2.14)(react@19.2.6)
+        specifier: ^0.1.3
+        version: 0.1.3(@types/react@19.2.14)(react@19.2.6)
     devDependencies:
       '@testing-library/react':
         specifier: ^16.0.0
@@ -228,8 +228,8 @@ importers:
   packages/ui:
     dependencies:
       '@react-ai-stream/core':
-        specifier: ^0.1.2
-        version: 0.1.2(@types/react@19.2.14)(react@19.2.6)
+        specifier: ^0.1.3
+        version: 0.1.3(@types/react@19.2.14)(react@19.2.6)
       highlight.js:
         specifier: ^11.0.0
         version: 11.11.1
@@ -925,8 +925,8 @@ packages:
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
 
-  '@react-ai-stream/core@0.1.2':
-    resolution: {integrity: sha512-lOb0qwh0m7/7J7ZXXeuOpeSSt9tOLj0CRjeD/T3IhqM4SYQEuo+jNe8IpeHRUeYwbGI4zeKLdOfuvDUB9YJz1Q==}
+  '@react-ai-stream/core@0.1.3':
+    resolution: {integrity: sha512-k1ZVdcxUrWOMyOjr2z0lfArJeInHLj6h/RwS9thUMLxkos705wKOAnSYzIGkB8k8NCA8OmV7H2B3SHy3TdQBOw==}
 
   '@rollup/rollup-android-arm-eabi@4.60.3':
     resolution: {integrity: sha512-x35CNW/ANXG3hE/EZpRU8MXX1JDN86hBb2wMGAtltkz7pc6cxgjpy1OMMfDosOQ+2hWqIkag/fGok1Yady9nGw==}
@@ -4156,7 +4156,7 @@ snapshots:
 
   '@popperjs/core@2.11.8': {}
 
-  '@react-ai-stream/core@0.1.2(@types/react@19.2.14)(react@19.2.6)':
+  '@react-ai-stream/core@0.1.3(@types/react@19.2.14)(react@19.2.6)':
     dependencies:
       zustand: 5.0.13(@types/react@19.2.14)(react@19.2.6)
     transitivePeerDependencies:
