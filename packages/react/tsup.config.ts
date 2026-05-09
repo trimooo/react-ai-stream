@@ -9,6 +9,9 @@ export default defineConfig({
   clean: true,
   treeshake: true,
   external: ['react', 'react-dom'],
+  esbuildOptions(options) {
+    options.jsx = 'automatic'
+  },
   outExtension({ format }) {
     return { js: format === 'esm' ? '.mjs' : '.cjs' }
   },

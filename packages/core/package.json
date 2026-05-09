@@ -1,6 +1,6 @@
 {
   "name": "@react-ai-stream/core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Provider-agnostic streaming engine and message store for react-ai-stream",
   "license": "MIT",
   "type": "module",

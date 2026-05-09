@@ -13,7 +13,7 @@ const config: DocsThemeConfig = {
         react-ai-stream
       </span>
       <span style={{ fontSize: 11, background: '#f1f5f9', color: '#64748b', padding: '2px 6px', borderRadius: 20, fontWeight: 500 }}>
-        v0.1.2
+        v0.1.3
       </span>
     </div>
   ),

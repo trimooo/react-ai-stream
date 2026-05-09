@@ -8,7 +8,7 @@ export default function Home() {
       <header style={{ borderBottom: '1px solid #e5e7eb', background: '#fff' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 24 }}>
           <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.3px' }}>react-ai-stream</span>
-          <span style={{ fontSize: 12, background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 20 }}>v0.1.2</span>
+          <span style={{ fontSize: 12, background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 20 }}>v0.1.3</span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 16, alignItems: 'center' }}>
             <a href="https://www.npmjs.com/package/@react-ai-stream/react" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>npm</a>
             <a href="https://github.com/trimooo/react-ai-stream" target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>GitHub</a>

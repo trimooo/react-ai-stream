@@ -11,6 +11,9 @@ export default defineConfig({
   treeshake: true,
   external: ['react', 'react-dom'],
   noExternal: ['react-markdown', 'rehype-highlight', 'remark-gfm'],
+  esbuildOptions(options) {
+    options.jsx = 'automatic'
+  },
   outExtension({ format }) {
     return { js: format === 'esm' ? '.mjs' : '.cjs' }
   },
