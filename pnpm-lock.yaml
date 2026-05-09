@@ -230,9 +230,6 @@ importers:
       '@react-ai-stream/core':
         specifier: ^0.1.2
         version: 0.1.2(@types/react@19.2.14)(react@19.2.6)
-      '@react-ai-stream/react':
-        specifier: ^0.1.2
-        version: 0.1.2(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       highlight.js:
         specifier: ^11.0.0
         version: 11.11.1
@@ -246,6 +243,9 @@ importers:
         specifier: ^4.0.0
         version: 4.0.1
     devDependencies:
+      '@react-ai-stream/react':
+        specifier: workspace:*
+        version: link:../react
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.14
@@ -927,12 +927,6 @@ packages:
 
   '@react-ai-stream/core@0.1.2':
     resolution: {integrity: sha512-lOb0qwh0m7/7J7ZXXeuOpeSSt9tOLj0CRjeD/T3IhqM4SYQEuo+jNe8IpeHRUeYwbGI4zeKLdOfuvDUB9YJz1Q==}
-
-  '@react-ai-stream/react@0.1.2':
-    resolution: {integrity: sha512-lPd0yRAa3Ia6LJl4m19R/a2GfId5Q+UVgFlMnI73vH1i63Dwixr32xVzgfYyg/NhSH6whVsDQSjPI9yGGzPSxg==}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
 
   '@rollup/rollup-android-arm-eabi@4.60.3':
     resolution: {integrity: sha512-x35CNW/ANXG3hE/EZpRU8MXX1JDN86hBb2wMGAtltkz7pc6cxgjpy1OMMfDosOQ+2hWqIkag/fGok1Yady9nGw==}
@@ -4169,16 +4163,6 @@ snapshots:
       - '@types/react'
       - immer
       - react
-      - use-sync-external-store
-
-  '@react-ai-stream/react@0.1.2(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
-    dependencies:
-      '@react-ai-stream/core': 0.1.2(@types/react@19.2.14)(react@19.2.6)
-      react: 19.2.6
-      react-dom: 19.2.6(react@19.2.6)
-    transitivePeerDependencies:
-      - '@types/react'
-      - immer
       - use-sync-external-store
 
   '@rollup/rollup-android-arm-eabi@4.60.3':
