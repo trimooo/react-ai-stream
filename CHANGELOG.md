@@ -7,6 +7,30 @@ This project uses [semantic versioning](https://semver.org/).
 
 ---
 
+## [0.1.3] — 2026-05-09
+
+### Fixed
+- `isAbortError`: removed dead `name === 'DOMException'` check (a DOMException's `.name` is always `'AbortError'`, never literally `'DOMException'`)
+- `package.json` exports: moved `types` condition before `import`/`require` in all three packages so TypeScript resolves types correctly
+- `MessageList`: added `loading` to scroll `useEffect` deps — typing indicator now scrolls into view when streaming starts
+- `useCopyToClipboard`: timer is now cleared on unmount and on rapid re-clicks, preventing stale state updates
+- `MarkdownRenderer`: copy button now reads `codeRef.current.textContent` instead of stringifying React element children (fixes `[object Object]` copy when `rehype-highlight` is active)
+- All route handlers: `finish_reason === 'length'` (max tokens reached) now closes the stream correctly alongside `stop`
+- `DemoChat`: changed `overflow: hidden` → `overflow-y: auto` so users can manually scroll the message pane
+- `useAIChat`: client is now reset when `endpoint`, `provider`, `apiKey`, or the context client changes between renders
+- `@react-ai-stream/ui` published `dependencies`: removed unused `@react-ai-stream/react` entry (nothing in the package imports it)
+- `ChatPanel` (custom-ui example): scroll effect now depends on `messages` array reference, not `messages.length`, so streaming token updates scroll correctly
+- Docs `custom-endpoint.mdx` code sample: fixed broken SSE buffer logic (`buf = ''` was set inside the `for..of` loop on first iteration, silently dropping mid-chunk content)
+- Docs `anthropic.mdx` code sample: added `controller.close(); return` after `message_stop` so the stream closes promptly
+- Docs `/ui` page: was returning 404 — created full UI component reference page
+- Docs API Reference (`/api`): was showing blank — created index page
+- Docs: link/accent color changed from blue (`hue 243`) to violet (`hue 262`)
+
+### Changed
+- `useAIChat` behavior note in docs updated to reflect the new client-reset logic
+
+---
+
 ## [0.1.2] — 2026-05-09
 
 ### Changed
