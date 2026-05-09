@@ -14,10 +14,10 @@
   <url><loc>https://react-ai-stream-docs.vercel.app/examples/minimal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://react-ai-stream-docs.vercel.app/examples/custom-ui</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://react-ai-stream-docs.vercel.app/examples/multi-model</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://react-ai-stream-docs.vercel.app/api</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://react-ai-stream-docs.vercel.app/api/useaichat</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://react-ai-stream-docs.vercel.app/api/createaiclient</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://react-ai-stream-docs.vercel.app/api/types</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/reference</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/reference/useaichat</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/reference/createaiclient</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/reference/types</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://react-ai-stream-docs.vercel.app/architecture</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://react-ai-stream-docs.vercel.app/recipes</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://react-ai-stream-docs.vercel.app/faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>

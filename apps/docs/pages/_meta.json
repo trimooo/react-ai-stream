@@ -21,11 +21,11 @@
     "title": "Examples"
   },
   "examples": "Examples",
-  "---api": {
+  "---reference": {
     "type": "separator",
     "title": "Reference"
   },
-  "api": "API Reference",
+  "reference": "API Reference",
   "architecture": "Architecture",
   "recipes": "Recipes",
   "faq": "FAQ"
