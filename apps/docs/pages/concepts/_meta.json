@@ -1,5 +1,6 @@
 {
   "index": "Overview",
+  "streaming-explained": "How streaming works",
   "why-backend-agnostic": "Why backend-agnostic?",
   "streaming-lifecycle": "Streaming lifecycle",
   "hook-architecture": "Hook architecture"

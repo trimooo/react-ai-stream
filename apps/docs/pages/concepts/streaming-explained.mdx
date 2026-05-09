@@ -1,0 +1,238 @@
+---
+title: How AI streaming works in React
+description: A ground-up explanation of SSE, chunked transfer, AsyncIterable, and how React state updates during streaming — no abstractions, just the raw mechanism.
+---
+
+import { Callout } from 'nextra/components'
+
+# How AI streaming works in React
+
+Most guides show you the code. This one explains what's actually happening at every layer — from the LLM producing tokens, through the network, to React re-rendering the cursor.
+
+---
+
+## Why streaming exists
+
+LLMs generate text one token at a time. A 500-word response from Claude or GPT-4 might take 10–15 seconds to fully generate. If you wait for the complete response before sending anything, the user stares at a spinner for 15 seconds. Streaming sends each token as it's produced — the response appears word by word, just like ChatGPT.
+
+---
+
+## The network: Server-Sent Events
+
+The protocol used is [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/APIs/Server-sent_events) (SSE). The browser opens a normal HTTP connection, but instead of the server sending a response and closing, it keeps the connection open and sends data in a specific text format:
+
+```
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+
+data: {"type":"text","text":"Hello"}
+
+data: {"type":"text","text":", world"}
+
+data: {"type":"done"}
+
+```
+
+Each `data:` line is one event. The double newline (`\n\n`) is the event delimiter. The browser's `EventSource` API and the Fetch API's `ReadableStream` both understand this format natively.
+
+<Callout>
+  SSE is one-directional: server → client only. That's fine for chat — the user message is sent as a normal POST, and the response streams back via SSE.
+</Callout>
+
+---
+
+## The server side: proxying the LLM stream
+
+Your API route receives the user's messages, forwards them to an LLM, and re-emits the tokens in the SSE format the hook expects.
+
+```ts
+// Simplified: OpenAI-compatible API → SSE
+const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}` },
+  body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, stream: true }),
+})
+
+const reader = upstream.body!.getReader()
+const decoder = new TextDecoder()
+let buf = ''
+
+while (true) {
+  const { done, value } = await reader.read()
+  if (done) break
+  buf += decoder.decode(value, { stream: true })
+  const parts = buf.split('\n\n')
+  buf = parts.pop() ?? ''
+  for (const part of parts) {
+    const line = part.trim()
+    if (!line.startsWith('data: ')) continue
+    const raw = line.slice(6)
+    if (raw === '[DONE]') { send({ type: 'done' }); controller.close(); return }
+    const token = JSON.parse(raw).choices?.[0]?.delta?.content
+    if (token) send({ type: 'text', text: token })
+  }
+}
+```
+
+Two things to notice:
+
+1. **Buffering is required.** Network chunks don't align with SSE event boundaries. A single `reader.read()` call might return half an event, or three events at once. You buffer and split on `\n\n`.
+2. **The proxy translates formats.** The LLM emits its own SSE format (OpenAI's `choices[0].delta.content`, Anthropic's `content_block_delta`). Your route translates it to the simple `{type, text}` format the hook speaks.
+
+---
+
+## The client side: reading the stream
+
+In the browser, the hook fetches your endpoint and reads the `ReadableStream` from the `Response`:
+
+```ts
+const response = await fetch(endpoint, {
+  method: 'POST',
+  body: JSON.stringify({ messages }),
+  signal: abortController.signal,
+})
+
+const reader = response.body!.getReader()
+const decoder = new TextDecoder()
+let buf = ''
+
+while (true) {
+  const { done, value } = await reader.read()
+  if (done) break
+  buf += decoder.decode(value, { stream: true })
+  const parts = buf.split('\n\n')
+  buf = parts.pop() ?? ''
+  for (const part of parts) {
+    const data = JSON.parse(part.replace('data: ', ''))
+    if (data.type === 'text') appendToken(data.text)
+    if (data.type === 'done') break
+  }
+}
+```
+
+Same buffering pattern as the server — it's the same SSE wire format on both ends.
+
+---
+
+## React state: why naïve approaches flicker
+
+The naive approach is `useState` with a string, concatenating tokens:
+
+```ts
+const [response, setResponse] = useState('')
+
+// In the while loop:
+setResponse(prev => prev + token)
+```
+
+This technically works but has a problem: **React batches state updates in events but not in async loops**. In React 18+, automatic batching helps, but you can still get 50+ re-renders per second during fast streaming — each call to `setResponse` schedules a render.
+
+The right approach is a **ref-based accumulator with a scheduled flush**:
+
+```ts
+const textRef = useRef('')
+
+// In the while loop:
+textRef.current += token
+// Schedule a render at most once per animation frame
+requestAnimationFrame(() => setDisplayText(textRef.current))
+```
+
+Or even better: use an **external store** (like Zustand's `createStore`) where you mutate the store state directly and React subscribes via `useSyncExternalStore`. This decouples the mutation rate from the render rate — the store can receive 100 tokens/second while React only re-renders when the subscription fires, which it batches efficiently.
+
+---
+
+## Abort: the signal chain
+
+Abort works through a chain of `AbortSignal`s:
+
+```
+user clicks Stop
+  → hook calls abortController.abort()
+    → fetch cancels (signal fires)
+      → reader.read() throws AbortError
+        → hook catches, marks loading: false
+          → partial response preserved in messages
+```
+
+On the server, if the client disconnects, `req.signal.aborted` becomes `true` (in Next.js Edge/Node.js). You can use this to cancel the upstream LLM call too, avoiding unnecessary token generation.
+
+```ts
+// Pass the request signal to the upstream fetch
+const upstream = await fetch(LLM_URL, {
+  signal: req.signal,  // cancels the LLM call if client disconnects
+  ...
+})
+```
+
+---
+
+## Isolated state per hook instance
+
+Each `useAIChat` call creates its own Zustand store instance:
+
+```ts
+const storeRef = useRef(createStore())
+```
+
+This means:
+
+```tsx
+const chat1 = useAIChat({ endpoint: '/api/chat?model=claude' })
+const chat2 = useAIChat({ endpoint: '/api/chat?model=gpt' })
+const chat3 = useAIChat({ endpoint: '/api/chat?model=groq' })
+```
+
+Three completely independent streams, three independent message histories, three independent loading states. No shared context, no collision. Each store's subscription notifies only the component that owns it.
+
+---
+
+## The full picture
+
+```
+[User submits message]
+        │
+        ▼
+useAIChat.sendMessage()
+  - appends user message to store
+  - opens fetch() with AbortSignal
+        │
+        ▼ HTTP POST /api/chat
+[Your API route]
+  - forwards to LLM (Anthropic/OpenAI/Groq)
+  - reads upstream SSE stream
+  - re-emits as {type:'text'} / {type:'done'}
+        │
+        ▼ SSE stream
+[Hook's reader loop]
+  - decodes chunks
+  - buffers on \n\n
+  - calls store.appendToken(text) per event
+        │
+        ▼
+[Zustand store mutation]
+  - mutates assistant message content in place
+  - notifies useSyncExternalStore subscribers
+        │
+        ▼
+[React re-render]
+  - MessageList receives updated messages
+  - renders partial response + typing indicator
+        │
+        ▼ [type:'done' received]
+[Hook marks loading: false]
+  - AbortController discarded
+  - onComplete(message) callback fires
+```
+
+That's the complete flow from prompt to rendered text, with no abstraction hidden.
+
+---
+
+## Further reading
+
+- [Streaming lifecycle in detail](/concepts/streaming-lifecycle) — timing, error states, edge cases
+- [Hook architecture](/concepts/hook-architecture) — isolated stores, model switching
+- [Why backend-agnostic?](/concepts/why-backend-agnostic) — why the server-side proxy matters
+- [Custom endpoint guide](/providers/custom-endpoint) — implementing the SSE protocol in any language

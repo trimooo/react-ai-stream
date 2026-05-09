@@ -567,6 +567,22 @@ Returns `AIClient` — pass to `useAIChat({ client })` or `<AIChatProvider clien
 
 ---
 
+## Community
+
+- [GitHub Discussions](https://github.com/trimooo/react-ai-stream/discussions) — questions, ideas, and show-and-tell
+- [Open an issue](https://github.com/trimooo/react-ai-stream/issues) — bug reports and feature requests
+- [Contributing guide](./CONTRIBUTING.md) — setup, guidelines, good first issues
+
+## Built with react-ai-stream
+
+Using react-ai-stream in a project? [Open a discussion](https://github.com/trimooo/react-ai-stream/discussions/categories/show-and-tell) or PR this table.
+
+| Project | Description |
+|---|---|
+| [Live demo](https://react-ai-stream-example.vercel.app) | 3-model parallel streaming — Groq × Llama 3.3, Llama 3.1, Llama 4 Scout |
+
+---
+
 ## License
 
 MIT
