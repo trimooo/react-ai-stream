@@ -54,6 +54,39 @@ export default function Page() {
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph App["React Application"]
+        direction TB
+        UI["Your UI / &lt;Chat /&gt;"]
+        Hook["useAIChat()"]
+        Store["Zustand store\nmessages · loading · error"]
+        Client["SSE parser\n+ normalizer"]
+        UI <-->|"messages · stop"| Hook
+        Hook <--> Store
+        Hook --> Client
+    end
+
+    subgraph Server["Your Server  (Next.js · Express · FastAPI · Go)"]
+        Route["/api/chat"]
+    end
+
+    subgraph Providers["LLM Providers"]
+        P["Anthropic · OpenAI\nGroq · Custom · Local"]
+    end
+
+    Client -->|"POST messages"| Route
+    Route <-->|"provider API"| Providers
+    Route -->|"SSE stream\ndata: {type:'text'}\ndata: {type:'done'}"| Client
+    Store -->|"useSyncExternalStore"| UI
+```
+
+Your React app never knows which LLM produced the stream. The hook speaks a three-event protocol (`text`, `done`, `error`) over SSE. Any server that produces those events works.
+
+---
+
 ## Why not Vercel AI SDK?
 
 | | react-ai-stream | Vercel AI SDK |
