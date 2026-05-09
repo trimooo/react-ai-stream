@@ -1,14 +1,53 @@
-import { Callout } from 'nextra/components'
+---
+title: react-ai-stream — Backend-agnostic AI streaming for React
+description: One hook. Any provider. Build streaming AI chat with OpenAI, Anthropic, Groq, or your own backend in minutes.
+---
 
-# react-ai-stream
+import { Callout, Cards, Card } from 'nextra/components'
 
-**Backend-agnostic AI streaming for React.**
+export const HeroCTAs = () => (
+  <div style={{display:'flex',gap:12,flexWrap:'wrap',margin:'28px 0 8px'}}>
+    <a href="https://react-ai-stream-example.vercel.app" target="_blank" rel="noreferrer"
+      style={{display:'inline-flex',alignItems:'center',gap:6,background:'#7c3aed',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
+      Live demo ↗
+    </a>
+    <a href="/quickstart"
+      style={{display:'inline-flex',alignItems:'center',gap:6,background:'#0f172a',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
+      Quickstart →
+    </a>
+    <a href="https://github.com/trimooo/react-ai-stream" target="_blank" rel="noreferrer"
+      style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f8fafc',border:'1px solid #e2e8f0',color:'#374151',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
+      GitHub
+    </a>
+  </div>
+)
 
-One hook. Any provider. Drop-in UI or bring your own.
+export const ForCard = ({ title, items }) => (
+  <div style={{border:'1px solid #e5e7eb',borderRadius:10,padding:'16px 20px',height:'100%'}}>
+    <div style={{fontWeight:700,fontSize:14,color:'#0f172a',marginBottom:10}}>{title}</div>
+    <ul style={{margin:0,paddingLeft:18,color:'#64748b',fontSize:13.5,lineHeight:1.75}}>
+      {items.map(i => <li key={i}>{i}</li>)}
+    </ul>
+  </div>
+)
+
+# Backend-agnostic AI streaming for React
+
+**Build ChatGPT-style interfaces with OpenAI, Anthropic, Groq, or your own backend.**
+
+Your frontend should not care whether responses come from OpenAI, Anthropic, Groq, FastAPI, Node.js, or your own inference server. `react-ai-stream` keeps the React layer completely decoupled from whatever produces the stream.
 
 ```bash npm2yarn
 npm install @react-ai-stream/react
 ```
+
+<HeroCTAs />
+
+---
+
+## 10 lines to a streaming chat
+
+Install, point at your backend, render. That's the full mental model.
 
 ```tsx
 'use client'
@@ -18,35 +57,57 @@ import '@react-ai-stream/ui/styles'
 
 export default function Page() {
   const { messages, sendMessage, loading, stop } = useAIChat({
-    endpoint: '/api/chat',    // any streaming endpoint
+    endpoint: '/api/chat',   // OpenAI, Anthropic, Groq, FastAPI — any streaming endpoint
   })
   return <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
 }
 ```
 
-→ [Get started in 5 minutes](/quickstart)
+The hook returns plain data. You can drop `<Chat />` in for zero-config, or wire `messages` to any UI you already have. [Full quickstart →](/quickstart)
 
 ---
 
-## Who this is for
+## Who is this for?
 
-**SaaS teams** adding AI chat to an existing product — you already have a design system and don't want to be locked into someone else's UI.
-
-**Enterprise dashboards** that need multiple isolated chat instances on the same page — model comparisons, parallel agents, side-by-side analysis.
-
-**AI copilot builders** who want streaming primitives, not opinionated UI. Wire `useAIChat` to any interface: a floating widget, a sidebar panel, a full-page chat.
-
-**Teams with a Python, Go, or Rails backend** — the hook speaks plain HTTP + SSE. Your existing server can produce the stream. No Node.js required.
-
-**Developers evaluating LLMs** — point the hook at different endpoints, run them in parallel, compare responses side by side.
+<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:12,margin:'16px 0'}}>
+  <ForCard title="AI copilot builders"
+    items={['Sidebar assistant in a SaaS product','Floating chat widget','Inline doc helper']} />
+  <ForCard title="Multi-model comparison"
+    items={['Run 3 providers in parallel','Side-by-side response quality','Cost/speed tradeoffs']} />
+  <ForCard title="SaaS dashboards"
+    items={['Already have a design system','Don\'t want locked-in UI','Need isolated chat instances']} />
+  <ForCard title="Non-Node backends"
+    items={['Python / FastAPI','Go / Rails','Any server that speaks HTTP+SSE']} />
+  <ForCard title="Internal tooling"
+    items={['Employee Q&A bots','Knowledge base search','Report generation']} />
+  <ForCard title="Customer support chat"
+    items={['Swap models without frontend deploys','Route by region or topic','Stream long answers']} />
+</div>
 
 ---
 
-## The architecture in one sentence
+## Why backend-agnostic matters
 
-Your server streams SSE tokens → `useAIChat` subscribes to them → React state updates in real time.
+Most AI chat libraries are secretly backend libraries. They stream from OpenAI directly, or through their own cloud, or via a specific server adapter. The React hook is just a thin client on top of one particular provider.
 
-That's it. The hook doesn't know what produced the stream.
+`react-ai-stream` takes a different approach: **the hook speaks a simple HTTP streaming protocol**. Any server that produces that protocol works.
+
+```
+data: {"type":"text","text":"Hello"}
+data: {"type":"text","text":", world"}
+data: {"type":"done"}
+```
+
+Three event types. That's the entire contract between your server and your React component. This means:
+
+- **Switch providers without touching React.** OpenAI → Anthropic → your own model? Change the API route, not the frontend.
+- **No API keys in the browser.** The hook talks to *your* server, which talks to the LLM.
+- **Multiple providers simultaneously.** Run `useAIChat` three times with three endpoints — each instance is fully isolated.
+- **Any backend language.** FastAPI, Go, Rails, Cloudflare Workers — if it can stream SSE, it works.
+
+Compare this to libraries that import `@anthropic-ai/sdk` directly in client code: your LLM choice is now coupled to your UI layer, visible in your bundle, and locked to that SDK's format.
+
+[Deep dive: Why backend-agnostic? →](/concepts/why-backend-agnostic)
 
 ---
 
@@ -56,47 +117,37 @@ That's it. The hook doesn't know what produced the stream.
 |---|---|---|
 | Bundle size | ~20 kB total | ~90 kB+ |
 | Framework requirement | None — plain React | Next.js optimized |
-| Multiple chat instances | Isolated per hook | Shared context |
+| Multiple isolated chat instances | Per hook, zero config | Shared context |
 | Bring your own UI | First-class | No |
-| Event hooks (`onToken` etc.) | ✓ | Limited |
-| Backend requirement | None (or any server) | Yes for most features |
-| Direct provider (no server) | ✓ (dev only) | ✓ |
+| Event hooks (`onToken`, `onComplete`) | ✓ | Limited |
+| Backend language | Any (HTTP+SSE) | Node.js preferred |
+| Direct provider (no server) | ✓ dev only | ✓ |
 
 <Callout type="info">
-  Both are MIT and well-maintained. Choose react-ai-stream when you want a portable hook with no framework opinions. Choose Vercel AI SDK when you need tight Next.js RSC integration.
+  Both are MIT and well-maintained. Choose react-ai-stream when you want portable streaming primitives with no framework opinions. Choose Vercel AI SDK when you need tight Next.js RSC integration.
 </Callout>
 
 ---
 
-## What it is not
+## Three packages, one idea
 
-react-ai-stream is not:
-
-- An agent framework
-- A RAG system
-- An orchestration engine
-- A memory or persistence layer
-
-The moment you need those, reach for [LangChain](https://js.langchain.com), [LlamaIndex](https://www.llamaindex.ai), or build your own. This library stays focused on what it's good at: **streaming AI responses into React**.
-
----
-
-## Packages
-
-| Package | What it does | Size |
+| Package | Role | Size |
 |---|---|---|
-| `@react-ai-stream/react` | `useAIChat` hook, `AIChatProvider` context | ~8 kB |
-| `@react-ai-stream/ui` | `<Chat>`, `<MessageList>`, `<ChatInput>`, `<MarkdownRenderer>` | ~12 kB |
-| `@react-ai-stream/core` | SSE parser, providers, message store — no React dep | ~6 kB |
+| `@react-ai-stream/core` | SSE parser, message store, abort utils | ~6 kB |
+| `@react-ai-stream/react` | `useAIChat` hook + `AIChatProvider` context | ~8 kB |
+| `@react-ai-stream/ui` | `<Chat>`, `<MessageList>`, `<MarkdownRenderer>` | ~12 kB |
 
-`@react-ai-stream/react` has no dependency on `@react-ai-stream/ui`. Use the hook alone and build your own UI. See the [custom UI example](/examples/custom-ui).
+`@react-ai-stream/react` has **no dependency on** `@react-ai-stream/ui`. Use the hook alone and wire it to Tailwind, shadcn/ui, or anything else. The UI package is optional.
 
 ---
 
 ## Next steps
 
-- **[Quickstart](/quickstart)** — working streaming in 5 minutes
-- **[Why backend-agnostic?](/concepts/why-backend-agnostic)** — the core architectural idea
-- **[Hook architecture](/concepts/hook-architecture)** — isolated stores, model switching
-- **[Custom UI example](/examples/custom-ui)** — hook + Tailwind, no UI package
-- **[API reference](/api/useaichat)** — all `useAIChat` options
+<Cards>
+  <Card title="Quickstart — streaming in 5 minutes" href="/quickstart" />
+  <Card title="Why backend-agnostic?" href="/concepts/why-backend-agnostic" />
+  <Card title="Hook architecture" href="/concepts/hook-architecture" />
+  <Card title="Custom UI example" href="/examples/custom-ui" />
+  <Card title="Provider setup (Anthropic, OpenAI, Groq)" href="/providers" />
+  <Card title="useAIChat API reference" href="/api/useaichat" />
+</Cards>

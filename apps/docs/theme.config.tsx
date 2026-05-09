@@ -46,20 +46,25 @@ const config: DocsThemeConfig = {
   head() {
     const { asPath } = useRouter()
     const canonical = `${SITE_URL}${asPath}`
+    const isHome = asPath === '/'
+    const title = isHome
+      ? 'react-ai-stream — Backend-agnostic AI streaming for React'
+      : 'react-ai-stream'
+    const description = 'One hook. Any provider. Build streaming AI chat with OpenAI, Anthropic, Groq, or your own backend.'
     return (
       <>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Backend-agnostic AI streaming for React. One hook. Any provider. Drop-in UI or bring your own." />
-        <meta name="keywords" content="react, ai, streaming, chat, hook, anthropic, openai, groq, llm, sse" />
+        <meta name="description" content={description} />
+        <meta name="keywords" content="react, ai, streaming, chat, hook, anthropic, openai, groq, llm, sse, server-sent events" />
         <link rel="canonical" href={canonical} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={canonical} />
         <meta property="og:site_name" content="react-ai-stream" />
-        <meta property="og:title" content="react-ai-stream — Backend-agnostic AI streaming for React" />
-        <meta property="og:description" content="One hook. Any provider. Drop-in UI or bring your own." />
-        <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content="react-ai-stream" />
-        <meta name="twitter:description" content="Backend-agnostic AI streaming for React. One hook. Any provider." />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
       </>
     )
   },

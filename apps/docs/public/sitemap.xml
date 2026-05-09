@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://react-ai-stream-docs.vercel.app/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/quickstart</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/concepts/why-backend-agnostic</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/concepts/hook-architecture</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/concepts/streaming-lifecycle</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/providers</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/providers/anthropic</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/providers/openai</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/providers/custom-endpoint</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/ui</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/examples</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/examples/minimal</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/examples/custom-ui</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/examples/multi-model</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/api</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/api/useaichat</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/api/createaiclient</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/api/types</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/architecture</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/recipes</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://react-ai-stream-docs.vercel.app/faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+</urlset>
