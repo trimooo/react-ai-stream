@@ -1,7 +1,8 @@
 {
   "name": "@react-ai-stream/react",
-  "version": "0.1.3",
-  "description": "React hooks and context for react-ai-stream",
+  "version": "0.1.4",
+  "description": "Stream AI chat from any backend with a single React hook — Anthropic, OpenAI, Groq, or your own server.",
+  "keywords": ["react", "ai", "streaming", "chat", "hook", "anthropic", "openai", "groq", "llm", "sse", "server-sent-events", "backend-agnostic"],
   "license": "MIT",
   "type": "module",
   "exports": {

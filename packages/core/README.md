@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/core)](https://www.npmjs.com/package/@react-ai-stream/core)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
 
-Provider-agnostic streaming engine for the `react-ai-stream` SDK.
+**Backend-agnostic AI streaming primitives** — SSE parser, message store, and abort utilities for the `react-ai-stream` SDK.
 
 This package contains the core primitives — SSE parser, message store, and built-in providers for Anthropic, OpenAI, and custom endpoints. You don't need to install this directly unless you're building your own integration.
 

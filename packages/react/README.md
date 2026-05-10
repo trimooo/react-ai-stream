@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/react)](https://www.npmjs.com/package/@react-ai-stream/react)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
 
-React hook for streaming AI chat — works with Anthropic, OpenAI, Groq, or any custom endpoint.
+**Stream AI chat from any backend with a single React hook.** Works with Anthropic, OpenAI, Groq, FastAPI, Go, Rails, or any server that speaks HTTP + SSE.
 
 ## Install
 

@@ -7,6 +7,21 @@ This project uses [semantic versioning](https://semver.org/).
 
 ---
 
+## [0.1.4] — 2026-05-10
+
+### Added
+- `apps/nextjs-basic` — minimal hook-only example app (no `@react-ai-stream/ui` dependency): Next.js 15, edge runtime, Groq backend, plain inline styles. Shows the bare minimum to get streaming working.
+
+### Changed
+- npm package descriptions rewritten to lead with the backend-agnostic differentiator:
+  - `@react-ai-stream/react`: "Stream AI chat from any backend with a single React hook — Anthropic, OpenAI, Groq, or your own server."
+  - `@react-ai-stream/core`: "Backend-agnostic SSE streaming engine and message store for react-ai-stream."
+  - `@react-ai-stream/ui`: "Drop-in React chat UI for react-ai-stream — Markdown rendering, syntax highlighting, and full CSS theming."
+- `keywords` field added to all three `package.json` files for npm/GitHub search discoverability (`sse`, `streaming`, `backend-agnostic`, `llm`, `anthropic`, `openai`, `groq`, etc.)
+- Per-package README openers sharpened to match the new positioning
+
+---
+
 ## [0.1.3] — 2026-05-09
 
 ### Fixed
