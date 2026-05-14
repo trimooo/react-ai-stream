@@ -9,7 +9,8 @@
 [![npm downloads](https://img.shields.io/npm/dm/@react-ai-stream/react?label=downloads)](https://www.npmjs.com/package/@react-ai-stream/react)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@react-ai-stream/react)](https://bundlephobia.com/package/@react-ai-stream/react)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
-[![Live demo](https://img.shields.io/badge/live%20demo-vercel.app-6366f1)](https://react-ai-stream-example.vercel.app/)
+[![Docs](https://img.shields.io/badge/docs-vercel.app-6366f1)](https://react-ai-stream-docs.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/demo-react--ai--stream--example.vercel.app-22c55e)](https://react-ai-stream-example.vercel.app)
 [![RAIS v1 Recommended](https://img.shields.io/badge/RAIS-v1%20Recommended-22c55e)](rais-spec/COMPLIANCE.md)
 
 **Universal AI streaming infrastructure.** One wire protocol. Any server. Any client framework.
@@ -47,16 +48,16 @@ The **RAIS Protocol** (React AI Stream) is a minimal three-event SSE standard fo
 | Package | Install | Description |
 |---------|---------|-------------|
 | [`@react-ai-stream/express`](https://www.npmjs.com/package/@react-ai-stream/express) | `npm i @react-ai-stream/express` | **Official Express** — `raisMiddleware()`, one-line RAIS streaming |
-| [`rais`](packages/python-rais/) | `pip install rais` | **Official Python** — `stream_response()` async generator, FastAPI / Starlette |
+| [`rais`](https://www.npmjs.com/package/rais) | `pip install rais` | **Official Python** — `stream_response()` async generator, FastAPI / Starlette |
 
 ### Tooling
 
 | Package | Install | Description |
 |---------|---------|-------------|
 | [`@react-ai-stream/core`](https://www.npmjs.com/package/@react-ai-stream/core) | `npm i @react-ai-stream/core` | SSE parser, chunk normalizer, Zustand store, abort utils |
-| [`@react-ai-stream/devtools`](packages/devtools/) | `npm i -D @react-ai-stream/devtools` | Floating DevTools panel — live token log, timing, tok/s |
-| [`rais-server`](packages/rais-server/) | `npx rais-server` | Reference server CLI — instant RAIS endpoint from any API key |
-| [`rais-compliance`](packages/rais-compliance/) | `npx rais-compliance` | Compliance test runner + mock server |
+| [`@react-ai-stream/devtools`](https://www.npmjs.com/package/@react-ai-stream/devtools) | `npm i -D @react-ai-stream/devtools` | Floating DevTools panel — live token log, timing, tok/s |
+| [`rais-server`](https://www.npmjs.com/package/rais-server) | `npx rais-server` | Reference server CLI — instant RAIS endpoint from any API key |
+| [`rais-compliance`](https://www.npmjs.com/package/rais-compliance) | `npx rais-compliance` | Compliance test runner + mock server |
 | [`create-ai-stream-app`](https://www.npmjs.com/package/create-ai-stream-app) | `npx create-ai-stream-app` | Scaffolding CLI — generates a working Next.js + RAIS app |
 
 > **RAIS v1 is frozen.** Backward compatibility is guaranteed forever. Streams built on RAIS v1 today will work with every future RAIS client. See [`rais-spec/STABILITY.md`](rais-spec/STABILITY.md).
