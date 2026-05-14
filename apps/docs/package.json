@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-ai-stream/core": "workspace:*",
+    "@react-ai-stream/react": "workspace:*",
     "next": "^14.2.0",
     "nextra": "2.13.4",
     "nextra-theme-docs": "2.13.4",

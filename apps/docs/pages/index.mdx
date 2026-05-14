@@ -4,6 +4,9 @@ description: RAIS Protocol — stream AI responses from any server to any client
 ---
 
 import { Callout, Cards, Card } from 'nextra/components'
+import dynamic from 'next/dynamic'
+
+export const LiveDemo = dynamic(() => import('../components/LiveDemo'), { ssr: false })
 
 export const HeroCTAs = () => (
   <div style={{display:'flex',gap:12,flexWrap:'wrap',margin:'28px 0 8px'}}>
@@ -42,6 +45,16 @@ npm install @react-ai-stream/react
 ```
 
 <HeroCTAs />
+
+---
+
+## Try it live — right here
+
+No API key. No install. Streaming starts instantly.
+
+<LiveDemo />
+
+[Full playground with protocol inspector →](/playground)
 
 ---
 

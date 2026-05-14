@@ -1,0 +1,151 @@
+---
+title: Playground — Live RAIS Demo
+description: Try the RAIS protocol live in your browser. No API key needed. A real streaming endpoint running inside this docs site.
+---
+
+import { Callout } from 'nextra/components'
+import dynamic from 'next/dynamic'
+
+export const LiveDemo = dynamic(() => import('../components/LiveDemo'), { ssr: false })
+
+# Playground
+
+A live RAIS-compliant streaming endpoint running inside this docs site. No API key, no setup, no backend required.
+
+<Callout type="info">
+  This demo streams real RAIS events — `text`, `done` — over SSE from a Next.js API route at `/api/demo`. Open your browser DevTools → Network tab → filter by `demo` to watch the raw stream.
+</Callout>
+
+<LiveDemo />
+
+---
+
+## What's happening under the hood
+
+Every message you send hits `/api/demo` — a standard Next.js API route that emits RAIS-compliant SSE:
+
+```
+POST /api/demo
+Content-Type: application/json
+{"messages":[{"role":"user","content":"What is RAIS?"}]}
+
+→ HTTP 200
+Content-Type: text/event-stream
+Cache-Control: no-cache
+
+id: 0
+data: {"type":"text","text":"RAIS"}
+
+id: 1
+data: {"type":"text","text":" is"}
+
+id: 2
+data: {"type":"text","text":" a"}
+
+...
+
+id: 47
+data: {"type":"done"}
+```
+
+The `useAIChat` hook parses these events and accumulates `text` tokens into the assistant message. The UI re-renders on every token — that's what creates the streaming effect you see.
+
+---
+
+## The client code
+
+The chat above is powered by `@react-ai-stream/react` with a custom UI component:
+
+```tsx
+import { useAIChat } from '@react-ai-stream/react'
+
+const { messages, sendMessage, loading, stop } = useAIChat({
+  endpoint: '/api/demo',
+})
+```
+
+That's the entire integration. The hook handles SSE parsing, message accumulation, loading state, and abort.
+
+---
+
+## The server code
+
+The API route that streams the response:
+
+```ts
+// pages/api/demo.ts
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { messages } = req.body
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.flushHeaders()
+
+  const words = generateResponse(messages).split(' ')
+  for (const word of words) {
+    res.write(`data: ${JSON.stringify({ type: 'text', text: word + ' ' })}\n\n`)
+    await sleep(30)
+  }
+
+  res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
+  res.end()
+}
+```
+
+Any server in any language that writes this pattern is RAIS-compliant.
+
+---
+
+## Use this in your own project
+
+```bash
+# Scaffold a full app in 30 seconds
+npx create-ai-stream-app
+
+# Or install manually
+npm install @react-ai-stream/react
+```
+
+```tsx
+import { useAIChat } from '@react-ai-stream/react'
+
+export default function Chat() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',   // your RAIS-compliant endpoint
+  })
+
+  return (
+    <div>
+      {messages.map(m => (
+        <div key={m.id}><b>{m.role}:</b> {m.content}</div>
+      ))}
+      <input onKeyDown={e => e.key === 'Enter' && sendMessage(e.currentTarget.value)} />
+      {loading && <button onClick={stop}>Stop</button>}
+    </div>
+  )
+}
+```
+
+---
+
+## Verify your own endpoint
+
+Run the compliance checker against any server:
+
+```bash
+npx rais-compliance http://localhost:3000/api/chat
+```
+
+Pass all 10 checks to earn the RAIS v1 Recommended badge:
+
+```
+✓  All 10 tests passed
+   RAIS v1 Recommended ✓
+```
+
+```md
+![RAIS v1 Recommended](https://img.shields.io/badge/RAIS-v1%20Recommended-22c55e)
+```
