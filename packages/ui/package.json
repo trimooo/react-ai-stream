@@ -1,6 +1,6 @@
 {
   "name": "@react-ai-stream/ui",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "Drop-in React chat UI for react-ai-stream — Markdown rendering, syntax highlighting, and full CSS theming.",
   "keywords": [
     "react",

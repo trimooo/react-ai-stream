@@ -1,6 +1,6 @@
 {
   "name": "@react-ai-stream/express",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Express middleware for RAIS-compliant AI streaming — drop-in SSE handler for any Express app.",
   "keywords": ["react-ai-stream", "express", "sse", "ai", "streaming", "rais", "llm", "middleware"],
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@react-ai-stream/vue",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Vue 3 composable for RAIS-protocol AI streaming — the useAIChat hook for Vue.",
   "keywords": [
     "vue",
