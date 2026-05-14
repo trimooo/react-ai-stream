@@ -3,6 +3,7 @@
   "playground": "▶ Live Playground",
   "quickstart": "Quickstart",
   "packages": "📦 All Packages",
+  "deploy": "🚀 Deploy to Vercel",
   "---concepts": {
     "type": "separator",
     "title": "Concepts"

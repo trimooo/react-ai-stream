@@ -1,22 +1,35 @@
 ---
 title: Playground — Live RAIS Demo
-description: Try the RAIS protocol live in your browser. No API key needed. A real streaming endpoint running inside this docs site.
+description: Try the RAIS protocol live in your browser. Mock demo with no setup, or connect your own API key for real AI.
 ---
 
 import { Callout } from 'nextra/components'
 import dynamic from 'next/dynamic'
 
 export const LiveDemo = dynamic(() => import('../components/LiveDemo'), { ssr: false })
+export const LiveDemoReal = dynamic(() => import('../components/LiveDemoReal'), { ssr: false })
 
 # Playground
 
-A live RAIS-compliant streaming endpoint running inside this docs site. No API key, no setup, no backend required.
+Two demos — one requires nothing, one uses your real API key.
+
+## Mock demo — no key needed
+
+Streams pre-written RAIS responses instantly. Good for seeing the protocol in action.
 
 <Callout type="info">
-  This demo streams real RAIS events — `text`, `done` — over SSE from a Next.js API route at `/api/demo`. Open your browser DevTools → Network tab → filter by `demo` to watch the raw stream.
+  Hits `/api/demo` — a Next.js API route in this docs site. Open DevTools → Network → filter `demo` to watch the raw SSE stream.
 </Callout>
 
 <LiveDemo />
+
+---
+
+## Real AI demo — your API key
+
+Connects to a real LLM via `/api/chat`. Your key is passed as a request header, used for this session only, never stored or logged.
+
+<LiveDemoReal />
 
 ---
 

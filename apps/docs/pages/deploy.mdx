@@ -1,0 +1,200 @@
+---
+title: Deploy to Vercel
+description: Deploy any react-ai-stream example app to Vercel in one click. Environment variables required for each project.
+---
+
+import { Callout, Steps, Tabs, Tab } from 'nextra/components'
+
+# Deploy to Vercel
+
+The monorepo contains 6 deployable apps. Each can be deployed independently from [github.com/trimooo/react-ai-stream](https://github.com/trimooo/react-ai-stream) using Vercel's **Root Directory** setting.
+
+<Callout type="info">
+  Vercel detects all 6 automatically when you import the repository. Pick one, set the root directory, add env vars, deploy.
+</Callout>
+
+---
+
+## Quick reference
+
+| App | Root directory | Framework | Env vars needed |
+|-----|---------------|-----------|-----------------|
+| Example app | `apps/example` | Next.js | At least one of: `GROQ_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` |
+| nextjs-basic | `apps/nextjs-basic` | Next.js | `GROQ_API_KEY` |
+| custom-ui | `apps/custom-ui` | Next.js | `GROQ_API_KEY` |
+| vue-example | `apps/vue-example` | Vite | None |
+| express server | `packages/express` | Express | Any provider key |
+| rais-server | `packages/rais-server` | Node | Any provider key |
+
+---
+
+## How to deploy
+
+<Steps>
+
+### Import the repository
+
+Go to [vercel.com/new](https://vercel.com/new) and import `trimooo/react-ai-stream`.
+
+### Select the root directory
+
+Vercel shows "6 deployable directories found". Click the app you want.
+
+### Add environment variables
+
+Before clicking **Deploy**, scroll to **Environment Variables** and add the required keys (see each app below).
+
+### Deploy
+
+Vercel builds and deploys. Next.js apps take ~60 seconds.
+
+</Steps>
+
+---
+
+## Apps
+
+### apps/example
+
+Full-featured demo with provider switcher — supports OpenAI, Anthropic, and Groq from the same UI.
+
+**Root directory:** `apps/example`
+
+Set at least one of:
+
+| Variable | Where to get it |
+|----------|----------------|
+| `GROQ_API_KEY` | [console.groq.com/keys](https://console.groq.com/keys) — free |
+| `OPENAI_API_KEY` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) |
+
+The app defaults to Anthropic if `ANTHROPIC_API_KEY` is set, then OpenAI, then Groq.
+
+---
+
+### apps/nextjs-basic
+
+Minimal Next.js App Router example — `useAIChat` hook wired to a Groq route.
+
+**Root directory:** `apps/nextjs-basic`
+
+| Variable | Value |
+|----------|-------|
+| `GROQ_API_KEY` | Your Groq key from [console.groq.com/keys](https://console.groq.com/keys) |
+
+---
+
+### apps/custom-ui
+
+Shows how to use the hook with a fully custom Tailwind UI — no `@react-ai-stream/ui` dependency.
+
+**Root directory:** `apps/custom-ui`
+
+| Variable | Value |
+|----------|-------|
+| `GROQ_API_KEY` | Your Groq key |
+
+---
+
+### apps/vue-example
+
+Vue 3 + `@react-ai-stream/vue` composable. Static Vite app — no server, no API keys.
+
+**Root directory:** `apps/vue-example`
+
+No environment variables needed. The app is a pure frontend demo.
+
+<Callout type="warning">
+  The vue-example calls a hardcoded demo endpoint. For production, update `src/App.vue` to point to your own RAIS-compliant server URL.
+</Callout>
+
+---
+
+### packages/express
+
+A standalone Express server that emits RAIS-compliant SSE.
+
+**Root directory:** `packages/express`
+
+| Variable | Value |
+|----------|-------|
+| `GROQ_API_KEY` | Required if using Groq |
+| `OPENAI_API_KEY` | Required if using OpenAI |
+| `ANTHROPIC_API_KEY` | Required if using Anthropic |
+
+---
+
+### packages/rais-server
+
+Zero-config RAIS reference server. Runs as a Node process.
+
+**Root directory:** `packages/rais-server`
+
+| Variable | Value |
+|----------|-------|
+| `GROQ_API_KEY` | Auto-detected if set |
+| `OPENAI_API_KEY` | Auto-detected if set |
+| `ANTHROPIC_API_KEY` | Auto-detected if set |
+
+The server picks the first available key automatically (Anthropic, then OpenAI, then Groq).
+
+---
+
+## Setting env vars in Vercel
+
+<Tabs items={['Dashboard', 'Vercel CLI', '.env.local (local dev)']}>
+<Tab>
+1. Open your project in [vercel.com](https://vercel.com)
+2. Go to **Settings → Environment Variables**
+3. Add each variable for **Production** and **Preview**
+4. Redeploy (push a new commit or click Redeploy)
+</Tab>
+<Tab>
+```bash
+npm install -g vercel
+
+# Add variable to production
+vercel env add GROQ_API_KEY production
+
+# Pull all env vars down to .env.local
+vercel env pull
+```
+</Tab>
+<Tab>
+```bash
+# apps/nextjs-basic/.env.local
+GROQ_API_KEY=gsk_your_key_here
+
+# apps/example/.env.local
+GROQ_API_KEY=gsk_...
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Never commit `.env.local` — it is in `.gitignore` by default.
+</Tab>
+</Tabs>
+
+---
+
+## Verify after deploy
+
+Once deployed, run the compliance checker against your live endpoint:
+
+```bash
+npx rais-compliance https://your-app.vercel.app/api/chat
+```
+
+Or test with curl:
+
+```bash
+curl -N -X POST https://your-app.vercel.app/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Hello"}]}'
+```
+
+---
+
+## Test without deploying
+
+You do not need to deploy anything to test the protocol. Go to the [Playground](/playground) and enter your API key directly — it calls `/api/chat` in this docs site and streams back a real LLM response.
