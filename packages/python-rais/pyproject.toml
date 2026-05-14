@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rais"
+version = "0.1.0"
+description = "RAIS protocol helpers for Python — stream AI responses from FastAPI, Starlette, or any async Python server."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = ["ai", "streaming", "sse", "rais", "fastapi", "llm", "openai", "anthropic"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.20.0"]
+all = ["openai>=1.0.0", "anthropic>=0.20.0"]
+
+[project.urls]
+Homepage = "https://github.com/trimooo/react-ai-stream"
+Documentation = "https://react-ai-stream-docs.vercel.app"
+Repository = "https://github.com/trimooo/react-ai-stream"
+Issues = "https://github.com/trimooo/react-ai-stream/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["rais"]

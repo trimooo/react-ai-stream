@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useAIChat } from '../src/hooks/useAIChat.js'
 import type { AIClient, StreamChunk, Message } from '@react-ai-stream/core'
+
+afterEach(() => { vi.restoreAllMocks() })
 
 function makeMockClient(chunks: StreamChunk[]): AIClient {
   return {
@@ -128,5 +130,79 @@ describe('useAIChat', () => {
     })
 
     expect(callCount).toBe(1)
+  })
+
+  it('fires onToken callback for each text chunk', async () => {
+    const onToken = vi.fn()
+    const client = makeMockClient([
+      { type: 'text', text: 'A' },
+      { type: 'text', text: 'B' },
+      { type: 'done' },
+    ])
+    const { result } = renderHook(() => useAIChat({ client, onToken }))
+    await act(async () => { await result.current.sendMessage('Hi') })
+    expect(onToken).toHaveBeenCalledTimes(2)
+    expect(onToken).toHaveBeenNthCalledWith(1, 'A')
+    expect(onToken).toHaveBeenNthCalledWith(2, 'B')
+  })
+
+  it('fires onComplete with assembled assistant message', async () => {
+    const onComplete = vi.fn()
+    const client = makeMockClient([
+      { type: 'text', text: 'Hello ' },
+      { type: 'text', text: 'world' },
+      { type: 'done' },
+    ])
+    const { result } = renderHook(() => useAIChat({ client, onComplete }))
+    await act(async () => { await result.current.sendMessage('Hi') })
+    expect(onComplete).toHaveBeenCalledOnce()
+    const msg: Message = onComplete.mock.calls[0]![0]
+    expect(msg.role).toBe('assistant')
+    expect(msg.content).toBe('Hello world')
+  })
+
+  it('fires onError callback on error chunk', async () => {
+    const onError = vi.fn()
+    const client = makeMockClient([{ type: 'error', error: 'timeout' }])
+    const { result } = renderHook(() => useAIChat({ client, onError }))
+    await act(async () => { await result.current.sendMessage('Hi') })
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'timeout' }))
+  })
+
+  it('error chunk without error field falls back to "Stream error"', async () => {
+    const client = makeMockClient([{ type: 'error' }])
+    const { result } = renderHook(() => useAIChat({ client }))
+    await act(async () => { await result.current.sendMessage('Hi') })
+    expect(result.current.error).toBe('Stream error')
+  })
+
+  it('sends previous messages on the second turn', async () => {
+    const streamFn = vi.fn().mockImplementation(async function* () {
+      yield { type: 'text', text: 'reply' }
+      yield { type: 'done' }
+    })
+    const client: AIClient = { provider: { stream: streamFn } }
+    const { result } = renderHook(() => useAIChat({ client }))
+    await act(async () => { await result.current.sendMessage('turn 1') })
+    await act(async () => { await result.current.sendMessage('turn 2') })
+    const secondCallMsgs = streamFn.mock.calls[1]![0] as Message[]
+    expect(secondCallMsgs.some((m) => m.role === 'assistant')).toBe(true)
+  })
+
+  it('accepts endpoint string option and streams via fetch', async () => {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      start(ctrl) {
+        ctrl.enqueue(encoder.encode('data: {"type":"text","text":"fetched"}\n\n'))
+        ctrl.enqueue(encoder.encode('data: {"type":"done"}\n\n'))
+        ctrl.close()
+      },
+    })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, body: stream }))
+    const { result } = renderHook(() =>
+      useAIChat({ endpoint: 'http://localhost:9999/api/chat' })
+    )
+    await act(async () => { await result.current.sendMessage('Hi') })
+    expect(result.current.messages[1]!.content).toBe('fetched')
   })
 })

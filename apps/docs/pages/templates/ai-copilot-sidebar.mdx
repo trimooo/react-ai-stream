@@ -1,0 +1,122 @@
+import { Callout } from 'nextra/components'
+
+# AI Copilot Sidebar
+
+A collapsible sidebar that gives users an AI assistant context-aware about the current page. The sidebar panel sits alongside your main content — pressing a keyboard shortcut or button toggles it open.
+
+<Callout type="tip">
+  Common pattern for dashboards, docs sites, and code editors. The sidebar shares no state with the rest of the app.
+</Callout>
+
+## Layout — `app/layout.tsx`
+
+```tsx
+import { CopilotSidebar } from '@/components/CopilotSidebar'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+        <main style={{ flex: 1, overflowY: 'auto' }}>{children}</main>
+        <CopilotSidebar />
+      </body>
+    </html>
+  )
+}
+```
+
+## `CopilotSidebar.tsx`
+
+```tsx
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+import { useEffect, useState } from 'react'
+
+const SYSTEM = "You are a helpful AI copilot embedded in a web app. Answer questions concisely."
+
+export function CopilotSidebar() {
+  const [open, setOpen] = useState(false)
+  const chat = useAIChat({
+    endpoint: '/api/chat',
+    initialMessages: [{ role: 'system', content: SYSTEM }],
+  })
+
+  // Toggle with Cmd/Ctrl + K
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setOpen(o => !o)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  return (
+    <aside
+      style={{
+        width: open ? 380 : 0,
+        minWidth: open ? 380 : 0,
+        height: '100%',
+        borderLeft: open ? '1px solid #e5e7eb' : 'none',
+        overflow: 'hidden',
+        transition: 'width 200ms ease, min-width 200ms ease',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+      }}
+    >
+      {/* Toggle button — always visible */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        title={open ? 'Close copilot (⌘K)' : 'Open copilot (⌘K)'}
+        style={{
+          position: 'absolute',
+          top: 12,
+          left: open ? 12 : -40,
+          zIndex: 10,
+          width: 32, height: 32,
+          borderRadius: 6,
+          background: '#f3f4f6',
+          border: '1px solid #e5e7eb',
+          cursor: 'pointer',
+          fontSize: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        {open ? '→' : '✦'}
+      </button>
+
+      {open && (
+        <>
+          <div style={{ padding: '0.75rem 1rem 0.5rem', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Copilot</span>
+            <kbd style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 4, color: '#9ca3af' }}>⌘K</kbd>
+          </div>
+          <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <Chat {...chat} placeholder="Ask the copilot…" />
+          </div>
+        </>
+      )}
+    </aside>
+  )
+}
+```
+
+## Injecting page context
+
+Make the copilot aware of the current page by including a system message with the page content:
+
+```tsx
+const SYSTEM = `You are an AI copilot. The user is currently viewing:
+
+Title: ${document.title}
+URL: ${window.location.href}
+
+Answer questions about this page concisely.`
+```
+
+Or pass structured data from server components via props.

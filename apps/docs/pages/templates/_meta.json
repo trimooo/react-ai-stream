@@ -1,0 +1,10 @@
+{
+  "index": "Overview",
+  "nextjs-openai": "Next.js + OpenAI",
+  "nextjs-anthropic": "Next.js + Anthropic",
+  "express-react": "Express + React",
+  "fastapi-react": "FastAPI + React",
+  "multi-model": "Multi-model comparison",
+  "ai-support-chat": "Support chat widget",
+  "ai-copilot-sidebar": "Copilot sidebar"
+}

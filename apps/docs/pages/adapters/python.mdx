@@ -1,0 +1,123 @@
+import { Tabs, Tab, Callout } from 'nextra/components'
+
+# Python (FastAPI / Starlette)
+
+The `rais` Python package provides a `stream_response()` async generator that yields RAIS-compliant SSE strings. Use it with FastAPI's `StreamingResponse`, Starlette, or any async Python framework.
+
+## Install
+
+<Tabs items={['OpenAI', 'Anthropic', 'Both']}>
+  <Tab>
+    ```bash
+    pip install rais[openai]
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    pip install rais[anthropic]
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    pip install rais[all]
+    ```
+  </Tab>
+</Tabs>
+
+## FastAPI example
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from rais import stream_response
+
+app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+class Message(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[Message]
+
+
+@app.post("/api/chat")
+async def chat(request: ChatRequest):
+    return StreamingResponse(
+        stream_response(
+            [m.model_dump() for m in request.messages],
+            provider="openai",  # or "anthropic"
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+```
+
+Run with: `uvicorn main:app --reload`
+
+## API
+
+### `stream_response(messages, *, provider, ...)`
+
+Async generator that yields `data: {...}\n\n` strings.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `messages` | `list[dict]` | Conversation history — `[{"role": ..., "content": ...}]` |
+| `provider` | `"openai" \| "anthropic"` | Which LLM provider to use |
+| `api_key` | `str \| None` | API key. Falls back to `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` env var |
+| `model` | `str \| None` | Model name. Defaults to `gpt-4o-mini` / `claude-sonnet-4-6` |
+| `max_tokens` | `int` | Max tokens to generate (Anthropic only, default `1024`) |
+| `system` | `str \| None` | System prompt injected before the conversation |
+
+### `rais_event(data)`
+
+Low-level helper — encode any dict as a RAIS SSE line:
+
+```python
+from rais import rais_event
+
+rais_event({"type": "text", "text": "Hello"})
+# → 'data: {"type": "text", "text": "Hello"}\n\n'
+```
+
+Use this when building your own streaming logic without `stream_response`.
+
+## Custom streaming logic
+
+For full control — local models, LangChain, LlamaIndex — implement the generator yourself using `rais_event`:
+
+```python
+import asyncio
+from rais import rais_event
+
+async def my_stream(messages):
+    # Your logic here — local model, LangChain, etc.
+    for token in generate_tokens(messages):
+        yield rais_event({"type": "text", "text": token})
+        await asyncio.sleep(0)
+    yield rais_event({"type": "done"})
+
+@app.post("/api/chat")
+async def chat(request: ChatRequest):
+    return StreamingResponse(
+        my_stream([m.model_dump() for m in request.messages]),
+        media_type="text/event-stream",
+    )
+```
+
+## Client
+
+The React and Vue hooks work unchanged:
+
+```tsx
+const chat = useAIChat({ endpoint: 'http://localhost:8000/api/chat' })
+```
+
+<Callout type="tip">
+  Run FastAPI on port 8000 and your React app on port 3000 — add the CORS middleware as shown above.
+</Callout>

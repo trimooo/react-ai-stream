@@ -1,0 +1,107 @@
+import { Callout } from 'nextra/components'
+
+# Express + React
+
+A standalone Express server emitting RAIS-compliant SSE, consumed by a React frontend with `useAIChat`.
+
+<Callout type="info">
+  This pattern works for any React app — CRA, Vite, or Next.js. The Express server runs separately from the frontend.
+</Callout>
+
+## Install
+
+**Backend:**
+```bash
+npm install express openai cors
+npm install -D @types/express @types/cors typescript tsx
+```
+
+**Frontend:**
+```bash
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+## Server — `server.ts`
+
+```ts
+import express from 'express'
+import cors from 'cors'
+import OpenAI from 'openai'
+
+const app = express()
+app.use(cors())
+app.use(express.json())
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+function chunk(data: object) {
+  return `data: ${JSON.stringify(data)}\n\n`
+}
+
+app.post('/api/chat', async (req, res) => {
+  const { messages } = req.body as { messages: Array<{ role: string; content: string }> }
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+
+  try {
+    const stream = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+      stream: true,
+    })
+
+    for await (const event of stream) {
+      const text = event.choices[0]?.delta?.content
+      if (text) res.write(chunk({ type: 'text', text }))
+      if (event.choices[0]?.finish_reason) {
+        res.write(chunk({ type: 'done' }))
+        break
+      }
+    }
+  } catch (err) {
+    res.write(chunk({ type: 'error', error: err instanceof Error ? err.message : 'error' }))
+  } finally {
+    res.end()
+  }
+})
+
+app.listen(3001, () => console.log('Server running on http://localhost:3001'))
+```
+
+Run with: `npx tsx server.ts`
+
+## Client — `App.tsx`
+
+```tsx
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+import { useAIChat } from '@react-ai-stream/react'
+
+export default function App() {
+  const chat = useAIChat({ endpoint: 'http://localhost:3001/api/chat' })
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Chat {...chat} />
+    </div>
+  )
+}
+```
+
+## Abort handling
+
+The Express route above doesn't yet cancel the upstream OpenAI stream when the client disconnects. Add this to cancel properly:
+
+```ts
+app.post('/api/chat', async (req, res) => {
+  const abortController = new AbortController()
+  req.on('close', () => abortController.abort())
+
+  const stream = await openai.chat.completions.create(
+    { model: 'gpt-4o-mini', messages, stream: true },
+    { signal: abortController.signal },
+  )
+  // ...
+})
+```

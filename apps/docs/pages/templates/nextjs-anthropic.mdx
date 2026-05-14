@@ -1,0 +1,106 @@
+import { Tabs, Tab, Callout } from 'nextra/components'
+
+# Next.js + Anthropic
+
+Stream Claude (claude-sonnet-4-6) responses into a Next.js 15 App Router app.
+
+<Callout type="tip">
+  Scaffold this automatically: `npx create-ai-stream-app` → choose **Anthropic**.
+</Callout>
+
+## Install
+
+```bash
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+## Server — `/app/api/chat/route.ts`
+
+```ts
+import { NextRequest } from 'next/server'
+
+export const runtime = 'edge'
+
+interface Message { role: string; content: string }
+
+function chunk(data: object) {
+  return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`)
+}
+
+export async function POST(req: NextRequest) {
+  const { messages } = (await req.json()) as { messages: Message[] }
+  const apiKey = process.env.ANTHROPIC_API_KEY!
+
+  const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: messages.filter(m => m.role !== 'system'),
+      stream: true,
+    }),
+    signal: req.signal,
+  })
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = upstream.body!.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+        for (const part of parts) {
+          const line = part.split('\n').find(l => l.startsWith('data: '))
+          if (!line) continue
+          try {
+            const parsed = JSON.parse(line.slice(6))
+            if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+              controller.enqueue(chunk({ type: 'text', text: parsed.delta.text }))
+            } else if (parsed.type === 'message_stop') {
+              controller.enqueue(chunk({ type: 'done' })); controller.close(); return
+            }
+          } catch { /* skip */ }
+        }
+      }
+      controller.enqueue(chunk({ type: 'done' })); controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+## Client — `/app/page.tsx`
+
+```tsx
+'use client'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+import { useAIChat } from '@react-ai-stream/react'
+
+export default function Page() {
+  const chat = useAIChat({ endpoint: '/api/chat' })
+  return (
+    <main style={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <Chat {...chat} placeholder="Ask Claude anything…" />
+    </main>
+  )
+}
+```
+
+## `.env.local`
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```

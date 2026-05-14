@@ -1,0 +1,118 @@
+import { Callout, Tabs, Tab } from 'nextra/components'
+
+# RAIS DevTools
+
+`@react-ai-stream/devtools` is a developer panel that shows every SSE event in real time — tokens as they arrive, stream timing, token rate, and errors. Zero overhead in production.
+
+<Callout type="info">
+  The DevTools bundle is ~14 KB. Use it in `devDependencies` and conditionally render it only in development so it ships no production cost.
+</Callout>
+
+## Install
+
+```bash
+npm install --save-dev @react-ai-stream/devtools
+```
+
+## Setup — two changes
+
+**1. Swap the import** in any file where you use `useAIChat`:
+
+```tsx
+// Before:
+import { useAIChat } from '@react-ai-stream/react'
+
+// After:
+import { useAIChat } from '@react-ai-stream/devtools'
+```
+
+The API is identical. The devtools version wraps the original hook and emits telemetry to a shared store.
+
+**2. Add `<RAISDevTools />`** to your app root (usually `app/layout.tsx`):
+
+```tsx
+import { RAISDevTools } from '@react-ai-stream/devtools'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        {process.env.NODE_ENV === 'development' && <RAISDevTools />}
+      </body>
+    </html>
+  )
+}
+```
+
+That's it. A `◈ RAIS` button appears at the bottom-right of your page.
+
+## What you see
+
+Click `◈ RAIS` to open the panel:
+
+```
+┌──────────────────────────────────────────────────┐
+│ ◈ RAIS DevTools                  [Clear]  [×]   │
+│ 2 streams · 47 tokens total                      │
+├──────────────────────────────────────────────────┤
+│ SESSIONS                                         │
+│ ● chat-1  14 tok · 1.2s                         │
+│ ✓ chat-2  38 tok · 1.8s · 21 t/s               │
+├──────────────────────────────────────────────────┤
+│ LOG — newest first                               │
+│ 12:34:07  chat-2  DONE  38tok · 1.8s · 21t/s   │
+│ 12:34:06  chat-2  SEND  "Explain async/await"   │
+│ 12:34:05  chat-1  ERR   Rate limit exceeded      │
+└──────────────────────────────────────────────────┘
+```
+
+### Session row
+- `●` streaming, `✓` done, `✕` error, `◻` aborted
+- Token count, elapsed time, tokens/second for completed streams
+
+### Log entries
+- `SEND` — user sent a message (truncated content shown)
+- `DONE` — stream completed (token count, elapsed, rate)
+- `ERR` — stream error (error message)
+- `STOP` — stream aborted by the user
+
+## Multiple instances
+
+Every `useAIChat` call gets its own `chat-N` ID in the panel. Run three models in parallel — all three appear as separate sessions with independent stats.
+
+## API
+
+### `useAIChat(options)`
+
+Drop-in replacement for `@react-ai-stream/react`'s `useAIChat`. Identical signature and return type.
+
+### `<RAISDevTools />`
+
+Floating panel component. No props required. Reads from the shared `devStore` singleton.
+
+### `devStore`
+
+Low-level access to the event store (for advanced integrations):
+
+```ts
+import { devStore } from '@react-ai-stream/devtools'
+
+const unsub = devStore.subscribe(() => {
+  const { sessions, log } = devStore.getSnapshot()
+  console.log(sessions, log)
+})
+```
+
+## Production
+
+The `<RAISDevTools />` component renders nothing in itself — the cost is purely in keeping a log of events. If you import `useAIChat` from `@react-ai-stream/devtools` and your bundler does not strip `process.env.NODE_ENV === 'development'` branches, you can use a conditional import instead:
+
+```tsx
+const { useAIChat } =
+  process.env.NODE_ENV === 'development'
+    ? await import('@react-ai-stream/devtools')
+    : await import('@react-ai-stream/react')
+```
+
+For most Vite and Next.js setups, the `NODE_ENV` guard in the layout is sufficient — the panel is never mounted in production, so the event store never accumulates.

@@ -1,0 +1,46 @@
+{
+  "name": "rais-server",
+  "version": "1.0.1",
+  "description": "RAIS Protocol v1 reference server — stream AI responses from any provider with a single command",
+  "bin": {
+    "rais-server": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": ">=0.20.0",
+    "openai": ">=4.0.0"
+  },
+  "devDependencies": {
+    "picocolors": "^1.1.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.0"
+  },
+  "keywords": [
+    "rais",
+    "ai-streaming",
+    "sse",
+    "openai",
+    "anthropic",
+    "groq",
+    "reference-server"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trimooo/react-ai-stream"
+  }
+}

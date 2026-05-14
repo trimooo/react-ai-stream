@@ -1,0 +1,45 @@
+{
+  "name": "@react-ai-stream/express",
+  "version": "1.0.0",
+  "description": "Express middleware for RAIS-compliant AI streaming — drop-in SSE handler for any Express app.",
+  "keywords": ["react-ai-stream", "express", "sse", "ai", "streaming", "rais", "llm", "middleware"],
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "git+https://github.com/trimooo/react-ai-stream.git", "directory": "packages/express" },
+  "homepage": "https://github.com/trimooo/react-ai-stream#readme",
+  "bugs": { "url": "https://github.com/trimooo/react-ai-stream/issues" },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@react-ai-stream/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "express": "^4.0.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "express": "^4.21.0",
+    "rimraf": "^6.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

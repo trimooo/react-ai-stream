@@ -1,0 +1,116 @@
+import { Callout, Tabs, Tab } from 'nextra/components'
+
+# Express (Node.js)
+
+`@react-ai-stream/express` is a one-line Express middleware that handles RAIS-compliant SSE streaming. It reads `req.body.messages`, calls your chosen provider, and pipes the stream back to the client with proper headers.
+
+## Install
+
+```bash
+npm install @react-ai-stream/express
+```
+
+Express itself is a peer dependency — install it separately if you haven't already.
+
+## Usage
+
+<Tabs items={['Built-in provider', 'Custom handler']}>
+  <Tab>
+    ```ts
+    import express from 'express'
+    import { raisMiddleware } from '@react-ai-stream/express'
+
+    const app = express()
+    app.use(express.json())
+
+    app.post('/api/chat', raisMiddleware({
+      provider: 'openai',
+      apiKey: process.env.OPENAI_API_KEY,
+      model: 'gpt-4o-mini',
+    }))
+
+    // Anthropic:
+    // app.post('/api/chat', raisMiddleware({
+    //   provider: 'anthropic',
+    //   apiKey: process.env.ANTHROPIC_API_KEY,
+    //   model: 'claude-sonnet-4-6',
+    // }))
+
+    app.listen(3001)
+    ```
+  </Tab>
+  <Tab>
+    Use a custom handler when you need full control — streaming from a local model, adding middleware logic, or using a different SDK.
+
+    ```ts
+    import express from 'express'
+    import { raisMiddleware } from '@react-ai-stream/express'
+    import type { StreamChunk } from '@react-ai-stream/express'
+    import OpenAI from 'openai'
+
+    const app = express()
+    app.use(express.json())
+
+    const openai = new OpenAI()
+
+    app.post('/api/chat', raisMiddleware({
+      handler: async function* (messages, signal) {
+        const stream = await openai.chat.completions.create(
+          { model: 'gpt-4o-mini', messages, stream: true },
+          { signal },
+        )
+        for await (const event of stream) {
+          const text = event.choices[0]?.delta?.content
+          if (text) yield { type: 'text', text } satisfies StreamChunk
+          if (event.choices[0]?.finish_reason) break
+        }
+        yield { type: 'done' } satisfies StreamChunk
+      },
+    }))
+
+    app.listen(3001)
+    ```
+  </Tab>
+</Tabs>
+
+## What it does
+
+1. Reads `req.body.messages` (array of `{role, content}` objects)
+2. Sets `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`
+3. Pipes `AsyncIterable<StreamChunk>` from provider → SSE response
+4. Aborts the LLM stream when the client disconnects
+
+## API
+
+### `raisMiddleware(options)`
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `provider` | `'openai' \| 'anthropic'` | Use a built-in provider |
+| `apiKey` | `string` | Provider API key |
+| `model` | `string` | Model name (optional, has sensible default) |
+| `handler` | `(messages, signal) => AsyncIterable<StreamChunk>` | Custom stream handler |
+
+Pass either `provider` + `apiKey` **or** a `handler` — not both.
+
+## Client
+
+Point `useAIChat` at your Express server:
+
+```tsx
+const chat = useAIChat({ endpoint: 'http://localhost:3001/api/chat' })
+```
+
+For same-origin Next.js apps, use a relative URL:
+
+```tsx
+const chat = useAIChat({ endpoint: '/api/chat' })
+```
+
+<Callout type="tip">
+  Add `cors` middleware if your React app runs on a different port than Express.
+</Callout>
+
+## Abort handling
+
+The middleware listens for `req.on('close')` and aborts the provider stream when the client disconnects or clicks Stop. This cancels the upstream LLM call so you don't pay for tokens that nobody reads.

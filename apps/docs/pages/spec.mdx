@@ -1,0 +1,240 @@
+import { Callout, Tabs, Tab } from 'nextra/components'
+
+# RAIS Protocol v1
+
+**RAIS** (React AI Stream) is a minimal Server-Sent Events protocol for streaming AI responses from any server to any client. It is the wire format at the core of `react-ai-stream`.
+
+<Callout type="info">
+  **Protocol-first design.** Any server that emits RAIS events works with `useAIChat` out of the box — regardless of which LLM, language, or framework is behind it.
+</Callout>
+
+---
+
+## Overview
+
+RAIS defines:
+
+- A **transport**: Server-Sent Events (SSE), unidirectional server → client
+- Three **event types**: `text`, `done`, `error`
+- **Abort semantics**: how clients cancel in-flight streams
+- A set of **reserved events** for future protocol versions
+
+The entire normative specification fits on this page. It is intentionally tiny.
+
+---
+
+## Transport
+
+RAIS streams over [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events). The server must respond with:
+
+```
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+```
+
+Each event is a `data:` field followed by a blank line:
+
+```
+data: <JSON payload>\n\n
+```
+
+Multiple `data:` lines per event are not used by RAIS v1 — each event is a single `data:` line.
+
+---
+
+## Event types
+
+### `text` — token arrived
+
+Emitted once per token (or small chunk) as the LLM produces output.
+
+```json
+{"type":"text","text":"Hello"}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | `"text"` | yes | Discriminant |
+| `text` | `string` | yes | Token content. May be multiple characters. |
+
+Clients **MUST** append `text` to the current assistant message content in order.
+
+### `done` — stream complete
+
+Emitted exactly once when the LLM has finished generating.
+
+```json
+{"type":"done"}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | `"done"` | yes | Discriminant |
+
+After receiving `done`, the client **MUST** close the SSE connection.
+
+### `error` — stream failed
+
+Emitted when the server encounters an unrecoverable error during generation. The stream ends after this event.
+
+```json
+{"type":"error","error":"Upstream rate limit exceeded"}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | `"error"` | yes | Discriminant |
+| `error` | `string` | yes | Human-readable description of the failure. |
+
+Clients **MUST** surface the error to the user and stop appending tokens.
+
+---
+
+## Wire example
+
+A complete exchange for the prompt `"Hello"`:
+
+```
+data: {"type":"text","text":"Hi"}
+
+data: {"type":"text","text"," there"}
+
+data: {"type":"text","text":"!"}
+
+data: {"type":"done"}
+```
+
+An error mid-stream:
+
+```
+data: {"type":"text","text":"Let me think"}
+
+data: {"type":"error","error":"Context window exceeded"}
+```
+
+---
+
+## Abort semantics
+
+Clients that need to cancel a stream (e.g. the user clicks Stop) **MUST** abort the underlying HTTP request using an [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController).
+
+```ts
+const controller = new AbortController()
+fetch('/api/chat', { signal: controller.signal, ... })
+
+// Cancel:
+controller.abort()
+```
+
+RAIS-compliant servers **SHOULD** propagate the abort signal to the upstream LLM call so that token generation actually stops (avoiding wasted compute).
+
+The client **MUST** silently ignore `AbortError` — a cancelled stream is not a failure.
+
+---
+
+## Reconnect behavior
+
+SSE clients may attempt to reconnect automatically after a dropped connection. RAIS servers **MUST NOT** re-emit tokens that were already sent in a previous connection.
+
+To prevent duplicate tokens, servers **SHOULD** emit an `id:` field with each event and honor the `Last-Event-ID` request header on reconnect:
+
+```
+id: 42
+data: {"type":"text","text":"Hello"}
+
+```
+
+If the server does not support resumable streams, it **SHOULD** respond with HTTP `204 No Content` when it receives a reconnect request containing `Last-Event-ID`.
+
+---
+
+## WebSocket transport (optional)
+
+RAIS events can also be delivered over WebSocket. The JSON payload format is identical — only the framing changes.
+
+**Client → Server** (one message after connect):
+```json
+{"messages":[{"role":"user","content":"Hello"}]}
+```
+
+**Server → Client** (one JSON frame per RAIS event):
+```json
+{"type":"text","text":"Hi"}
+{"type":"done"}
+```
+
+To use WebSocket transport with `useAIChat`:
+
+```ts
+const chat = useAIChat({
+  endpoint: 'wss://your-server.example.com/ws/chat',
+  transport: 'ws',
+})
+```
+
+The hook API is unchanged. `stop()` closes the WebSocket cleanly.
+
+SSE is the default and recommended transport. WebSocket is useful when you need **bidirectional** communication (e.g. the server also needs to push events independently of a user message).
+
+---
+
+## Reserved events (v2 candidates)
+
+These event types are reserved for future protocol versions. Servers **MUST NOT** emit them today; clients **SHOULD** silently ignore unrecognized event types.
+
+| Type | Purpose |
+|------|---------|
+| `metadata` | Stream-level metadata (model name, latency, token count) |
+| `tool_call` | LLM-initiated tool call (function calling, code execution) |
+| `reasoning` | Extended thinking tokens (e.g. Claude extended thinking) |
+
+---
+
+## Compliance checklist
+
+### Server requirements
+
+A RAIS-compliant server **MUST**:
+
+- [ ] Respond with `Content-Type: text/event-stream`
+- [ ] Emit events as `data: <JSON>\n\n`
+- [ ] Emit `{"type":"done"}` when the stream ends normally
+- [ ] Emit `{"type":"error","error":"..."}` on failure (instead of a non-2xx response mid-stream)
+- [ ] Silently handle aborted connections without leaking goroutines / async tasks
+
+A RAIS-compliant server **SHOULD**:
+
+- [ ] Forward the abort signal to the upstream LLM call
+- [ ] Emit `id:` fields and honor `Last-Event-ID` for reconnect safety
+- [ ] Never log or store message content (privacy by default)
+
+### Client requirements
+
+A RAIS-compliant client **MUST**:
+
+- [ ] Parse `data: <JSON>` lines, split on `\n\n` boundaries
+- [ ] Buffer partial events across network chunks (never split on `\n` alone)
+- [ ] Append `text` tokens in order to the assistant message
+- [ ] Stop consuming the stream after `done` or `error`
+- [ ] Use `AbortController` for user-initiated cancellation
+- [ ] Silently swallow `AbortError`
+
+---
+
+## Reference implementations
+
+| Implementation | Language | Package |
+|----------------|----------|---------|
+| SSE parser + hook | TypeScript / React | [`@react-ai-stream/core`](https://www.npmjs.com/package/@react-ai-stream/core) |
+| Next.js API route | TypeScript | [apps/example](https://github.com/trimooo/react-ai-stream/tree/master/apps/example/app/api/chat) |
+| Express middleware | TypeScript | `@react-ai-stream/express` _(coming soon)_ |
+| FastAPI helper | Python | `rais` _(coming soon)_ |
+
+---
+
+## Versioning
+
+The current version is **RAIS v1**. Breaking changes (new required fields, changed semantics) will increment the major version. Additive changes (new reserved events promoted to normative) will increment the minor version.
+
+The protocol version is communicated out-of-band (documentation and package versions) — there is no `version` field in the wire format.

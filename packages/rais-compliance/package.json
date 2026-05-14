@@ -1,0 +1,39 @@
+{
+  "name": "rais-compliance",
+  "version": "1.0.1",
+  "description": "RAIS Protocol v1 compliance test runner",
+  "bin": {
+    "rais-compliance": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  },
+  "keywords": [
+    "rais",
+    "compliance",
+    "sse",
+    "ai-streaming",
+    "protocol"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trimooo/react-ai-stream"
+  }
+}

@@ -1,0 +1,371 @@
+import { Callout, Steps, Tabs, Tab } from 'nextra/components'
+
+# RAIS v1.0 — Ecosystem Roadmap
+
+<Callout type="info">
+  This document describes where RAIS stands today and every layer being built toward a stable, widely-adopted streaming interoperability protocol. It is a single public reference for contributors, adopters, and anyone evaluating whether to build on RAIS.
+</Callout>
+
+---
+
+## Where we are right now
+
+The infrastructure exists. It works.
+
+| Layer | Status |
+|---|---|
+| RAIS Protocol v1 specification | Published |
+| `@react-ai-stream/core` — SSE parser + chunk normalizer | Shipping |
+| `@react-ai-stream/react` — `useAIChat` hook | Shipping |
+| `@react-ai-stream/express` — server middleware | Shipping |
+| `@react-ai-stream/vue` — Vue 3 composable | Shipping |
+| `@react-ai-stream/ui` — drop-in `<Chat>` component | Shipping |
+| `@react-ai-stream/devtools` — session inspector overlay | Shipping |
+| `rais-compliance` — CLI protocol checker | Shipping |
+| `rais-server` — zero-config reference server | Shipping |
+| `create-ai-stream-app` — project scaffolder | Shipping |
+| Python `rais` package (FastAPI / Starlette) | Shipping |
+| 117 automated tests, 8 packages | Passing |
+| Cross-language support (JS, Python) | Live |
+| Formal compliance tooling | Live |
+
+That is enough to publicly treat RAIS as a serious protocol ecosystem — not a library that happens to have tests, but a specification-first project with growing multi-language support.
+
+What comes next is not more features. It is *ecosystem maturity*.
+
+---
+
+## 1. Ship a stable coordinated release — v1.0.0
+
+The protocol is stable. The APIs are stable. The test suite is passing. The remaining step is making that stability formal.
+
+**Packages graduating to v1.0.0:**
+
+| Package | Rationale |
+|---|---|
+| `@react-ai-stream/core` | Foundation of the entire client-side stack |
+| `@react-ai-stream/react` | Primary integration surface for React apps |
+| `@react-ai-stream/express` | First-class server adapter |
+| `@react-ai-stream/vue` | First-class Vue adapter |
+| `rais-compliance` | Protocol compliance is by definition v1 |
+| `rais-server` | Reference implementation must track the spec |
+
+**Packages staying below v1.0:**
+
+| Package | Rationale |
+|---|---|
+| `@react-ai-stream/devtools` | Tooling; UI is experimental |
+| `@react-ai-stream/ui` | Drop-in components; API may evolve |
+
+**What a v1.0 tag means:**
+
+- No breaking changes to event types, hook APIs, or middleware signatures without a major version bump
+- Compatibility promise: RAIS v1 servers work with RAIS v1 clients forever
+- Unknown fields and event types are silently ignored — the protocol is additive only
+
+This matters beyond semver bookkeeping. People trust 1.0. Organizations evaluate 1.0. The psychological signal is real.
+
+---
+
+## 2. Add integration tests between packages
+
+Today every package has strong unit tests. What does not exist yet is an automated test that verifies the full stack: React hook talking to an Express server, Vue composable talking to `rais-server`, Python FastAPI endpoint passing the compliance runner.
+
+These are the tests that catch real regressions — the kind where all unit tests pass but the system breaks because two packages assumed different behavior at their boundary.
+
+**The plan: `/apps/e2e`**
+
+```
+apps/e2e/
+├── tests/
+│   ├── react-express.test.ts       # useAIChat → Express raisMiddleware
+│   ├── vue-rais-server.test.ts     # Vue composable → rais-server
+│   ├── python-react.test.ts        # FastAPI/rais → useAIChat
+│   ├── compliance-matrix.test.ts   # all servers × compliance runner
+│   └── abort-resilience.test.ts    # abort mid-stream across adapters
+├── servers/
+│   ├── express-server.ts
+│   └── start-python.ts
+└── vitest.config.ts
+```
+
+**Tooling:** Vitest (matches the monorepo) + `node:http` for lightweight server control. Playwright only if browser rendering needs verification.
+
+**Coverage targets:**
+
+| Integration | What is verified |
+|---|---|
+| React ↔ Express | Tokens stream into React state; `stop()` triggers abort cleanly |
+| Vue ↔ rais-server | Vue `shallowRef`s update; no reactivity leaks |
+| Python ↔ React | SSE from FastAPI parses correctly into `useAIChat` messages |
+| Compliance matrix | All adapters produce ≥ RAIS v1 Core results |
+| Abort | No hanging connections on any adapter when client aborts |
+
+This is the next maturity layer. The protocol is only as trustworthy as the interoperability tests that verify it.
+
+---
+
+## 3. Create official certified implementations
+
+The compliance CLI exists. The missing piece is a curated doc section that shows developers: "here is what a certified RAIS implementation looks like, in your language and framework."
+
+**Certified implementations target list:**
+
+| Framework | Language | Status |
+|---|---|---|
+| Express | Node.js | Live — `@react-ai-stream/express` |
+| Next.js App Router | Node.js | Live — `apps/example` |
+| FastAPI | Python | Live — `packages/python-rais` |
+| Hono | Node.js / Edge | Planned |
+| Go net/http | Go | Planned |
+| Rails / ActionController::Live | Ruby | Planned |
+| Bun.serve | Bun | Planned |
+
+**Each certified implementation shows:**
+
+- The minimal working server code
+- The compliance run output (`✓ All 10 tests passed — RAIS v1 Recommended`)
+- The certification badge
+- Which transports are tested (SSE today; WebSocket in v1.1)
+
+This is how ecosystems compound. Every new certified implementation is a signal to the community that the protocol is real and tested.
+
+---
+
+## 4. Add version negotiation early
+
+Version negotiation is always harder to add after adoption grows. The right time is now, while there is one version and zero migration burden.
+
+**Proposed: a header on every RAIS response**
+
+```
+X-RAIS-Version: 1
+```
+
+And optionally, a field in the `done` event:
+
+```json
+{ "type": "done", "protocolVersion": "1" }
+```
+
+**Why this matters:**
+
+- Clients can detect version mismatches and surface clear errors instead of silent parse failures
+- Future versions can negotiate capabilities (WebSocket support, binary frames, multiplexing) without guessing
+- Compliance tooling can assert the version header as a SHOULD check today, graduating it to MUST in v1.1
+
+The cost of adding this now is one header. The cost of adding it after widespread adoption is a coordination problem across every implementation.
+
+---
+
+## 5. Build a protocol playground
+
+This is probably the single highest-ROI technical addition available right now.
+
+**The insight:** protocols become popular when developers can *see* them. Not read about them — see them running in real time.
+
+**What the playground does:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  RAIS Protocol Playground                               │
+│                                                         │
+│  Endpoint URL                                           │
+│  [ https://your-server.com/api/chat              ]      │
+│                                                         │
+│  Transport      [ SSE ▼ ]    Scenario  [ normal ▼ ]     │
+│                                                         │
+│  [ Run Compliance ]  [ Send Custom Message ]            │
+│                                                         │
+│  ┌──────────────────┐  ┌────────────────────────────┐  │
+│  │  Raw SSE stream  │  │  Parsed events             │  │
+│  │                  │  │                            │  │
+│  │  data: {"type":  │  │  ● text  "The answer is"  │  │
+│  │  "text","text":  │  │  ● text  " forty-two"     │  │
+│  │  "The answer"}   │  │  ● done  (312ms, 8 tokens) │  │
+│  │                  │  │                            │  │
+│  └──────────────────┘  └────────────────────────────┘  │
+│                                                         │
+│  Compliance  ✓ 10/10  RAIS v1 Recommended              │
+│  Timing      first token: 48ms  total: 312ms            │
+│  Abort test  ✓ clean                                    │
+└─────────────────────────────────────────────────────────┘
+```
+
+**What it teaches:**
+
+- The raw SSE wire format — what a browser actually receives
+- How the RAIS parser normalizes provider-specific formats
+- Timing characteristics: time to first token, tokens per second
+- Abort behavior — what happens when a client disconnects mid-stream
+- Compliance status in real time
+
+**Implementation:** a Next.js page using `useAIChat` pointed at a user-supplied endpoint, with a raw SSE display panel alongside the parsed output. The compliance check runs against the same endpoint in a background fetch.
+
+This turns RAIS from something you read about into something you can interact with in 60 seconds. That difference drives adoption.
+
+---
+
+## 6. Add real benchmarking
+
+Engineering audiences trust measurements. Right now the only claims RAIS makes are correctness claims (the tests). Performance claims require a benchmark suite.
+
+**What to measure:**
+
+| Metric | Why it matters |
+|---|---|
+| Bundle size (core + react) | Adoption blocker if too large |
+| Memory per session | Important for multi-tab and server-side contexts |
+| React re-renders during streaming | Key for UI performance claims |
+| Time to first token (E2E) | The user-visible latency number |
+| Throughput at 100 req/s | Relevant for `rais-server` and Express adapter |
+| Abort cleanup time | Protocol correctness under load |
+
+**Comparison baselines:**
+
+- Vercel AI SDK `useChat` (the primary comparison)
+- Raw `fetch` + manual stream parsing
+- Naive `useState` with concatenation on every token
+
+**What gets published:**
+
+- A `/benchmark` page on this docs site with current numbers
+- A reproducible benchmark package in `apps/benchmark/`
+- Charts updated on each release
+- Methodology documented so the numbers can be challenged and improved
+
+Numbers that can be verified are more valuable than numbers that cannot be.
+
+---
+
+## 7. Lock down governance quality
+
+Before the contributor count grows is exactly the right time to establish governance infrastructure. Adding it after the community is established means writing rules for people who already have different expectations.
+
+**Documents to add:**
+
+| File | Contents |
+|---|---|
+| `CODE_OF_CONDUCT.md` | Expected behavior, enforcement process |
+| `SECURITY.md` | How to report vulnerabilities; response SLA |
+| `SUPPORT.md` | Where to ask questions; what maintainers will and won't answer |
+| `MAINTAINERS.md` | Who maintains what; decision-making process; release ownership |
+| `RELEASE.md` | Step-by-step release process; who can cut a release; changelog policy |
+
+**Why this matters to experienced engineers:**
+
+An experienced engineer evaluating whether to contribute to a project looks for these signals: Is there a clear process? Is there someone to contact if something goes wrong? Is the maintenance model sustainable? The absence of these documents doesn't mean the answers are bad — it means there are no answers, and that is its own answer.
+
+Governance documents seem boring. They strongly affect whether the right people show up.
+
+---
+
+## 8. Create a compatibility badge system
+
+Badges are how protocol membership propagates visually across the ecosystem. A third-party project that implements RAIS should be able to display that membership in their README, and that badge should link back to a verification page.
+
+**Proposed certification tiers:**
+
+| Badge | Criteria |
+|---|---|
+| **RAIS v1 Core** | All 7 MUST checks pass |
+| **RAIS v1 Recommended** | All MUST + all SHOULD checks pass |
+| **RAIS v1 Full** | Recommended + abort resilience + version header |
+
+The compliance CLI already outputs these tiers. What is missing is:
+
+1. SVG badge assets at a stable URL
+2. A verification page where a badge links to the live compliance run
+3. Documentation on how to earn and display each badge
+
+Once three or four well-known projects display the badge, it becomes a natural question: *does your AI server support RAIS?* That question is what standards spread on.
+
+---
+
+## 9. Expand beyond the frontend framing
+
+The current name and positioning — `react-ai-stream` — accurately describes where the project started. It does not describe where it is going.
+
+RAIS is not a React library. It is a streaming interoperability protocol. The React and Vue packages are client adapters. The Express and Python packages are server adapters. The compliance runner works regardless of what language either side is written in.
+
+**The reframe:**
+
+| Before | After |
+|---|---|
+| "React AI streaming SDK" | "Streaming interoperability layer for AI systems" |
+| "Works with React and Vue" | "Any server, any client, any language" |
+| "Reduce boilerplate in your React app" | "Decouple your AI backend from your frontend permanently" |
+| Targets: React developers | Targets: backend engineers, framework authors, AI infrastructure teams |
+
+**What changes:**
+
+- The docs homepage leads with the protocol, not the hook
+- Outreach targets backend and infrastructure communities, not just frontend
+- Architecture diagrams show the protocol boundary, not the component tree
+- Contributors from Go, Python, Rust, Ruby communities are explicitly welcomed
+
+The code does not change. The framing does. That changes who finds it, who trusts it, and who builds on it.
+
+---
+
+## 10. Build RAIS-native infrastructure
+
+This is the long game. It is also the deepest opportunity.
+
+Libraries wrap APIs. Protocols become infrastructure. The difference is what gets built *on top of them*.
+
+**What RAIS-native infrastructure looks like:**
+
+**Observability**
+A streaming-aware proxy that records every RAIS session: tokens received, timing, abort events, error rates. Similar to what Datadog does for HTTP traces, but for AI streaming sessions specifically.
+
+**Replay**
+Recorded sessions can be replayed — against a different model, a different backend version, or a different client implementation. This turns every production session into a regression test.
+
+**Multiplexing**
+One client connection, multiple parallel AI streams. The RAIS event model supports this cleanly: add a `sessionId` field to each event, one SSE connection carries many logical sessions.
+
+**Gateways**
+A RAIS gateway sits in front of multiple AI providers. It normalizes their output to RAIS format, handles failover, applies rate limiting, and presents a single RAIS-compliant endpoint to the client. The client never knows which model answered.
+
+**Inspectors**
+Developer tools that attach to a live stream and display events in real time — the DevTools panel that already ships, but as a standalone browser extension and a CLI tool that works with any endpoint.
+
+**Stream recording + audit**
+Compliance-sensitive deployments need a record of what the AI said. A RAIS recorder captures every stream at the protocol layer, independent of the application.
+
+**The principle:**
+
+Every one of these is only possible because the wire format is standardized. You cannot build a generic AI stream replay tool if every stream uses a different format. You cannot build a provider-agnostic gateway if every provider's SSE format requires custom parsing. Standardization is not a constraint on infrastructure — it is the precondition for infrastructure.
+
+The protocol layer becomes more valuable than any single SDK. That is the trajectory.
+
+---
+
+## The order of operations
+
+The moves above are roughly ordered by leverage and reversibility:
+
+1. **v1.0 release** — changes the psychological signal immediately, low effort
+2. **Integration tests** — catches real regressions before they become user-reported bugs
+3. **Certified implementations** — each one extends reach to a new developer community
+4. **Version negotiation** — gets harder with every new implementation; do it now
+5. **Playground** — highest single-page ROI for adoption
+6. **Benchmarks** — required before making performance claims publicly
+7. **Governance** — required before inviting serious contributors
+8. **Badges** — amplifies everything above; makes membership visible
+9. **Reframe** — changes who finds the project; affects long-term contributor pool
+10. **Infrastructure** — where the long-term value accumulates
+
+None of these require the protocol to change. They require the *ecosystem around the protocol* to grow. That is a different kind of work — slower, compounding, and ultimately more durable than adding another hook.
+
+---
+
+<Callout type="info">
+  **Contribute.** If any of these directions interests you — writing a Go implementation, building the playground, adding integration tests — open an issue or a discussion on GitHub. The protocol is stable. The ecosystem is building. Early contributors shape what this becomes.
+</Callout>
+
+*Protocol specification: [RAIS Protocol v1](/spec)*  
+*Compliance tooling: [rais-compliance](/compliance)*  
+*Architecture overview: [Architecture](/architecture)*  
+*Why this exists: [Why RAIS Exists](/why-rais)*

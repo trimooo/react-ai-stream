@@ -1,56 +1,99 @@
 # react-ai-stream
 
 [![CI](https://github.com/trimooo/react-ai-stream/actions/workflows/ci.yml/badge.svg)](https://github.com/trimooo/react-ai-stream/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@react-ai-stream/core?label=%40react-ai-stream%2Fcore)](https://www.npmjs.com/package/@react-ai-stream/core)
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/react?label=%40react-ai-stream%2Freact)](https://www.npmjs.com/package/@react-ai-stream/react)
 [![npm](https://img.shields.io/npm/v/@react-ai-stream/ui?label=%40react-ai-stream%2Fui)](https://www.npmjs.com/package/@react-ai-stream/ui)
-[![npm](https://img.shields.io/npm/v/@react-ai-stream/core?label=%40react-ai-stream%2Fcore)](https://www.npmjs.com/package/@react-ai-stream/core)
+[![npm](https://img.shields.io/npm/v/@react-ai-stream/vue?label=%40react-ai-stream%2Fvue)](https://www.npmjs.com/package/@react-ai-stream/vue)
+[![npm](https://img.shields.io/npm/v/@react-ai-stream/express?label=%40react-ai-stream%2Fexpress)](https://www.npmjs.com/package/@react-ai-stream/express)
 [![npm downloads](https://img.shields.io/npm/dm/@react-ai-stream/react?label=downloads)](https://www.npmjs.com/package/@react-ai-stream/react)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@react-ai-stream/react)](https://bundlephobia.com/package/@react-ai-stream/react)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
-[![Live demo](https://img.shields.io/badge/live%20demo-react--ai--stream.vercel.app-6366f1)](https://react-ai-stream-example.vercel.app/)
+[![Live demo](https://img.shields.io/badge/live%20demo-vercel.app-6366f1)](https://react-ai-stream-example.vercel.app/)
+[![RAIS v1 Recommended](https://img.shields.io/badge/RAIS-v1%20Recommended-22c55e)](rais-spec/COMPLIANCE.md)
 
-**Backend-agnostic AI streaming for React.** One hook. Any provider. Drop-in UI or bring your own.
+**Universal AI streaming infrastructure.** One wire protocol. Any server. Any client framework.
 
-- **One hook** — `useAIChat` manages messages, loading state, abort, and errors
-- **Any backend** — Anthropic, OpenAI, Groq, or your own streaming endpoint
-- **Optional UI** — drop-in `<Chat />` component or wire the hook to your own design
-- **Event hooks** — `onToken`, `onComplete`, `onError` for side-effects without extra state
-- **TypeScript first** — strict types, full DTS, ESM + CJS
+The **RAIS Protocol** (React AI Stream) is a minimal three-event SSE standard for streaming AI responses from any backend to any frontend. This monorepo ships everything you need to implement it: a React hook, Vue composable, Express middleware, Python helper, DevTools panel, and a scaffolding CLI.
 
-## Who this is for
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                         RAIS Protocol v1                             │
+│               data: {"type":"text","text":"..."}                     │
+│               data: {"type":"done"}                                  │
+│               data: {"type":"error","error":"..."}                   │
+└────────────────────────────────┬─────────────────────────────────────┘
+                                 │  SSE  (WebSocket optional)
+              ┌──────────────────┼──────────────────┐
+              ▼                  ▼                  ▼
+         React hook          Vue composable     Any HTTP client
+         useAIChat()         useAIChat()        fetch / curl / ...
+```
 
-**SaaS teams** adding AI chat to an existing product — you already have a design system, you don't want to be locked into ours.
+---
 
-**Enterprise dashboards** that need multiple isolated chat instances on the same page — model comparisons, parallel streams, side-by-side analysis.
+## The Ecosystem
 
-**AI copilot builders** who want streaming primitives, not opinions. Wire `useAIChat` to any interface: a sidebar, a floating widget, a full-page chat.
+### Official frontend clients
 
-**Teams with a Python, Go, or Rails backend** — the hook speaks plain HTTP + SSE. Your existing server can produce the stream. No Node.js required.
+| Package | Install | Description |
+|---------|---------|-------------|
+| [`@react-ai-stream/react`](https://www.npmjs.com/package/@react-ai-stream/react) | `npm i @react-ai-stream/react` | **Official React** — `useAIChat` hook, messages, loading, abort, error |
+| [`@react-ai-stream/ui`](https://www.npmjs.com/package/@react-ai-stream/ui) | `npm i @react-ai-stream/ui` | **Official React UI** — `<Chat>`, `<MessageList>`, `<MarkdownRenderer>` |
+| [`@react-ai-stream/vue`](https://www.npmjs.com/package/@react-ai-stream/vue) | `npm i @react-ai-stream/vue` | **Official Vue 3** — `useAIChat` composable, identical API surface |
 
-> Not for: agent systems, RAG, orchestration, or memory platforms. This library stays focused on streaming AI responses into React.
+### Official server adapters
+
+| Package | Install | Description |
+|---------|---------|-------------|
+| [`@react-ai-stream/express`](https://www.npmjs.com/package/@react-ai-stream/express) | `npm i @react-ai-stream/express` | **Official Express** — `raisMiddleware()`, one-line RAIS streaming |
+| [`rais`](packages/python-rais/) | `pip install rais` | **Official Python** — `stream_response()` async generator, FastAPI / Starlette |
+
+### Tooling
+
+| Package | Install | Description |
+|---------|---------|-------------|
+| [`@react-ai-stream/core`](https://www.npmjs.com/package/@react-ai-stream/core) | `npm i @react-ai-stream/core` | SSE parser, chunk normalizer, Zustand store, abort utils |
+| [`@react-ai-stream/devtools`](packages/devtools/) | `npm i -D @react-ai-stream/devtools` | Floating DevTools panel — live token log, timing, tok/s |
+| [`rais-server`](packages/rais-server/) | `npx rais-server` | Reference server CLI — instant RAIS endpoint from any API key |
+| [`rais-compliance`](packages/rais-compliance/) | `npx rais-compliance` | Compliance test runner + mock server |
+| [`create-ai-stream-app`](https://www.npmjs.com/package/create-ai-stream-app) | `npx create-ai-stream-app` | Scaffolding CLI — generates a working Next.js + RAIS app |
+
+> **RAIS v1 is frozen.** Backward compatibility is guaranteed forever. Streams built on RAIS v1 today will work with every future RAIS client. See [`rais-spec/STABILITY.md`](rais-spec/STABILITY.md).
+
+> The protocol spec lives in [`rais-spec/`](rais-spec/) — read it if you're implementing a RAIS-compliant server in any language.
+
+> Protocol extensions go through the [`rfcs/`](rfcs/) process. Three RFCs are currently in draft: tool calls, metadata events, and reasoning tokens.
+
+---
+
+## Quickstart
+
+```bash
+npx create-ai-stream-app
+```
+
+Pick a provider (OpenAI / Anthropic / Groq / custom), pick a UI style, and you get a working streaming app in under a minute.
+
+Or install manually:
+
+```bash
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
 
 ```tsx
-// 1. npm install @react-ai-stream/react @react-ai-stream/ui
-// 2. Add an API route (see Backend Setup below)
-// 3. Done.
-
 'use client'
 import { useAIChat } from '@react-ai-stream/react'
 import { Chat } from '@react-ai-stream/ui'
 import '@react-ai-stream/ui/styles'
 
 export default function Page() {
-  const { messages, sendMessage, loading, stop } = useAIChat({
-    endpoint: '/api/chat',
-  })
-
-  return (
-    <div style={{ height: '80vh' }}>
-      <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
-    </div>
-  )
+  const { messages, sendMessage, loading, stop } = useAIChat({ endpoint: '/api/chat' })
+  return <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
 }
 ```
+
+Add a RAIS-compliant API route (Next.js, Express, FastAPI — see [Backend Setup](#backend-setup)) and you're streaming.
 
 ---
 
@@ -58,60 +101,47 @@ export default function Page() {
 
 ```mermaid
 flowchart LR
-    subgraph App["React Application"]
-        direction TB
-        UI["Your UI / &lt;Chat /&gt;"]
-        Hook["useAIChat()"]
-        Store["Zustand store\nmessages · loading · error"]
-        Client["SSE parser\n+ normalizer"]
-        UI <-->|"messages · stop"| Hook
-        Hook <--> Store
-        Hook --> Client
+    subgraph Clients["Frontend Clients"]
+        React["@react-ai-stream/react\nuseAIChat()"]
+        Vue["@react-ai-stream/vue\nuseAIChat()"]
+        Any["Any HTTP client\nfetch / axios / curl"]
     end
 
-    subgraph Server["Your Server  (Next.js · Express · FastAPI · Go)"]
-        Route["/api/chat"]
+    subgraph Protocol["RAIS Protocol v1"]
+        SSE["SSE  text/event-stream\ndata: {type,text|done|error}"]
+        WS["WebSocket (optional)\nJSON frames"]
     end
 
-    subgraph Providers["LLM Providers"]
-        P["Anthropic · OpenAI\nGroq · Custom · Local"]
+    subgraph Servers["Server Adapters"]
+        Express["@react-ai-stream/express\nraisMiddleware()"]
+        Python["rais (Python)\nstream_response()"]
+        Custom["Custom route\nNext.js · Go · Rails · ..."]
     end
 
-    Client -->|"POST messages"| Route
-    Route <-->|"provider API"| Providers
-    Route -->|"SSE stream\ndata: {type:'text'}\ndata: {type:'done'}"| Client
-    Store -->|"useSyncExternalStore"| UI
+    subgraph LLMs["LLM Providers"]
+        P["Anthropic · OpenAI\nGroq · Local · Custom"]
+    end
+
+    Clients <-->|"HTTP POST"| Protocol
+    Protocol <-->|"SSE / WS"| Servers
+    Servers <-->|"provider SDK"| LLMs
 ```
 
-Your React app never knows which LLM produced the stream. The hook speaks a three-event protocol (`text`, `done`, `error`) over SSE. Any server that produces those events works.
+The hook never knows which LLM produced the stream — it speaks RAIS. Any server that emits RAIS events works, regardless of language or framework.
 
 ---
 
-## Why not Vercel AI SDK?
+## The RAIS Wire Format
 
-| | react-ai-stream | Vercel AI SDK |
-|---|---|---|
-| Bundle size | ~12 kB | ~90 kB+ |
-| Framework lock-in | None — plain React | Next.js / Vercel optimized |
-| Backend required | Optional (direct providers work) | Yes for most features |
-| Custom endpoint | First-class | Via adapters |
-| Pre-built UI | Yes (`@react-ai-stream/ui`) | No |
-| Event hooks | `onToken` / `onComplete` / `onError` | Limited |
-| License | MIT | MIT |
+Three events. That's the entire protocol.
 
-react-ai-stream is a good fit when you want a small, portable library with no framework opinions. If you're all-in on Next.js and need RSC streaming or server actions, Vercel AI SDK is worth evaluating.
+| Event | Wire | When |
+|-------|------|------|
+| `text` | `data: {"type":"text","text":"Hello"}\n\n` | One per token / chunk |
+| `done` | `data: {"type":"done"}\n\n` | Stream complete |
+| `error` | `data: {"type":"error","error":"Rate limit"}\n\n` | Unrecoverable failure |
 
----
-
-## Installation
-
-```bash
-npm install @react-ai-stream/react @react-ai-stream/ui
-# or
-pnpm add @react-ai-stream/react @react-ai-stream/ui
-```
-
-> Peer dependencies: React 18 or 19.
+Any server in any language that can write these three SSE events is RAIS-compliant. See [`rais-spec/`](rais-spec/) for the full formal specification.
 
 ---
 
@@ -135,12 +165,8 @@ export async function POST(req: NextRequest) {
       'x-api-key': process.env.ANTHROPIC_API_KEY!,
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      messages,
-      stream: true,
-    }),
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages, stream: true }),
+    signal: req.signal,
   })
 
   const stream = new ReadableStream({
@@ -182,50 +208,42 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-The SDK expects your endpoint to emit SSE lines in this format:
-
-| Chunk | Meaning |
-|---|---|
-| `{ "type": "text", "text": "..." }` | Append text to the assistant message |
-| `{ "type": "done" }` | Stream is complete |
-| `{ "type": "error", "error": "..." }` | Surface an error |
-
-### Express / Node.js
+### Express (with middleware)
 
 ```ts
 import express from 'express'
-import Anthropic from '@anthropic-ai/sdk'
+import { raisMiddleware } from '@react-ai-stream/express'
 
 const app = express()
 app.use(express.json())
 
-app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body
-  res.setHeader('Content-Type', 'text/event-stream')
-  res.setHeader('Cache-Control', 'no-cache')
+app.post('/api/chat', raisMiddleware({
+  provider: 'anthropic',
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  model: 'claude-sonnet-4-6',
+}))
+```
 
-  const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
+### FastAPI (Python)
 
-  const client = new Anthropic()
-  const stream = await client.messages.stream({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
-    messages,
-  })
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from rais import stream_response
 
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta')
-      send({ type: 'text', text: event.delta.text })
-  }
+app = FastAPI()
 
-  send({ type: 'done' })
-  res.end()
-})
+@app.post("/api/chat")
+async def chat(req: ChatRequest):
+    return StreamingResponse(
+        stream_response(req.messages, provider="openai"),
+        media_type="text/event-stream",
+    )
 ```
 
 ---
 
-## useAIChat Hook
+## React Hook
 
 ```tsx
 const {
@@ -241,8 +259,9 @@ const {
 ### Options
 
 | Option | Type | Description |
-|---|---|---|
-| `endpoint` | `string` | URL of your streaming API route |
+|--------|------|-------------|
+| `endpoint` | `string` | URL of your RAIS-compliant streaming route |
+| `transport` | `'sse' \| 'ws'` | Transport protocol (default: `'sse'`) |
 | `headers` | `Record<string, string>` | Extra headers sent with every request |
 | `body` | `Record<string, unknown>` | Extra fields merged into every request body |
 | `provider` | `'openai' \| 'anthropic'` | Direct provider (no backend needed) |
@@ -256,23 +275,14 @@ const {
 | `onComplete` | `(message: Message) => void` | Called when the full response is done |
 | `onError` | `(error: Error) => void` | Called on stream or provider errors |
 
-### Event hooks example
+### Event callbacks
 
 ```tsx
 const chat = useAIChat({
   endpoint: '/api/chat',
-  onToken: (token) => {
-    // e.g. update a word count in real-time
-    setTokenCount((n) => n + 1)
-  },
-  onComplete: (message) => {
-    // e.g. save the final response to a database
-    saveToHistory(message)
-  },
-  onError: (err) => {
-    // e.g. report to Sentry
-    Sentry.captureException(err)
-  },
+  onToken: (token) => setTokenCount((n) => n + 1),
+  onComplete: (message) => saveToHistory(message),
+  onError: (err) => Sentry.captureException(err),
 })
 ```
 
@@ -289,92 +299,33 @@ interface Message {
 
 ---
 
-## Providers
+## Vue Composable
 
-### Custom endpoint (recommended)
+```ts
+// packages/vue — same API surface as the React hook
+import { useAIChat } from '@react-ai-stream/vue'
 
-```tsx
-const chat = useAIChat({ endpoint: '/api/chat' })
-
-// With extra headers or body fields:
-const chat = useAIChat({
+const { messages, sendMessage, loading, stop, error } = useAIChat({
   endpoint: '/api/chat',
-  headers: { 'X-Session-Id': sessionId },
-  body: { persona: 'support-agent' },
 })
 ```
 
-### Anthropic direct
-
-```tsx
-const chat = useAIChat({
-  provider: 'anthropic',
-  apiKey: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!,
-  model: 'claude-sonnet-4-6',
-  maxTokens: 2048,
-  system: 'You are a helpful assistant.',
-})
-```
-
-### OpenAI direct
-
-```tsx
-const chat = useAIChat({
-  provider: 'openai',
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY!,
-  model: 'gpt-4o',
-  system: 'You are a helpful assistant.',
-})
-```
-
-### Groq (OpenAI-compatible)
-
-```tsx
-const chat = useAIChat({
-  provider: 'openai',
-  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY!,
-  baseURL: 'https://api.groq.com/openai/v1',
-  model: 'llama-3.3-70b-versatile',
-})
-```
+Values are `ShallowRef`. Lifecycle is tied to the component — the stream is aborted on `onUnmounted`.
 
 ---
 
 ## Pre-built UI
 
-### `<Chat />` — all-in-one
-
 ```tsx
 import { Chat } from '@react-ai-stream/ui'
 import '@react-ai-stream/ui/styles'
 
-<Chat
-  messages={messages}
-  onSend={sendMessage}
-  onStop={stop}
-  loading={loading}
-  placeholder="Type here…"
-  className="my-chat"
-/>
+<Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
 ```
 
-### Individual components
+Individual components: `<MessageList>`, `<ChatInput>`, `<MarkdownRenderer>` (syntax-highlighted code blocks, copy button).
 
-```tsx
-import { MessageList, ChatInput, MarkdownRenderer } from '@react-ai-stream/ui'
-
-function MyChatUI() {
-  const { messages, sendMessage, loading, stop } = useAIChat({ endpoint: '/api/chat' })
-  return (
-    <div>
-      <MessageList messages={messages} loading={loading} />
-      <ChatInput onSend={sendMessage} onStop={stop} loading={loading} />
-    </div>
-  )
-}
-```
-
-### Theming with CSS variables
+### Theming
 
 ```css
 :root {
@@ -382,7 +333,6 @@ function MyChatUI() {
   --ras-bg-user: #6366f1;
   --ras-bg-assistant: #1e293b;
   --ras-text: #f1f5f9;
-  --ras-text-user: #ffffff;
   --ras-text-muted: #94a3b8;
   --ras-border: #334155;
   --ras-radius: 16px;
@@ -392,102 +342,65 @@ function MyChatUI() {
 }
 ```
 
-| Variable | Default | Controls |
-|---|---|---|
-| `--ras-bg` | `#ffffff` | Chat container background |
-| `--ras-bg-user` | `#2563eb` | User message bubble |
-| `--ras-bg-assistant` | `#f3f4f6` | Assistant message bubble |
-| `--ras-text` | `#111827` | Base text color |
-| `--ras-text-user` | `#ffffff` | Text inside user bubbles |
-| `--ras-text-muted` | `#6b7280` | Typing indicator, timestamps |
-| `--ras-border` | `#e5e7eb` | Input border, dividers |
-| `--ras-radius` | `12px` | Bubble corner radius |
-| `--ras-font` | `system-ui, sans-serif` | Font family |
-| `--ras-code-bg` | `#1e293b` | Code block background |
-| `--ras-code-text` | `#e2e8f0` | Code block text |
+---
 
-### Dark mode
+## DevTools
 
-```css
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ras-bg: #0f172a;
-    --ras-bg-user: #6366f1;
-    --ras-bg-assistant: #1e293b;
-    --ras-text: #f1f5f9;
-    --ras-text-muted: #94a3b8;
-    --ras-border: #334155;
-    --ras-code-bg: #0d1117;
-    --ras-code-text: #c9d1d9;
-  }
-}
+```tsx
+import { useAIChat } from '@react-ai-stream/devtools'   // drop-in swap
+import { RAISDevTools } from '@react-ai-stream/devtools'
+
+// In your layout:
+{process.env.NODE_ENV === 'development' && <RAISDevTools />}
 ```
+
+A `◈ RAIS` button appears at the bottom-right. Click to see live token events, per-stream timing, tok/s, and error traces. Zero production cost.
 
 ---
 
-## Customization Recipes
+## Why RAIS
 
-### Custom UI (bypass `<Chat />`)
+| | react-ai-stream (RAIS) | Vercel AI SDK |
+|--|------------------------|---------------|
+| Protocol | Open standard (RAIS v1) | Proprietary |
+| Bundle size | ~12 kB | ~90 kB+ |
+| Framework | React, Vue, any HTTP client | Next.js optimized |
+| Server language | Any (Node, Python, Go, Rails…) | Node.js |
+| Pre-built UI | Yes (`@react-ai-stream/ui`) | No |
+| DevTools | Yes (`@react-ai-stream/devtools`) | No |
+| Scaffolding CLI | Yes (`create-ai-stream-app`) | No |
+| License | MIT | MIT |
 
-```tsx
-'use client'
-import { useState } from 'react'
-import { useAIChat } from '@react-ai-stream/react'
-import { MarkdownRenderer } from '@react-ai-stream/ui'
-import '@react-ai-stream/ui/styles'
+react-ai-stream is the right choice when you care about a small footprint, backend portability, or want to implement the streaming layer in any language. If you're building exclusively in the Next.js + Vercel ecosystem and need RSC or server actions, Vercel AI SDK is worth evaluating.
 
-export function SupportWidget() {
-  const { messages, sendMessage, loading, stop } = useAIChat({ endpoint: '/api/chat' })
-  const [input, setInput] = useState('')
+---
 
-  return (
-    <div className="widget">
-      <div className="messages">
-        {messages.map((m) => (
-          <div key={m.id} className={`bubble bubble--${m.role}`}>
-            {m.role === 'assistant'
-              ? <MarkdownRenderer content={m.content} />
-              : <p>{m.content}</p>}
-          </div>
-        ))}
-      </div>
-      <form onSubmit={(e) => { e.preventDefault(); sendMessage(input); setInput('') }}>
-        <input value={input} onChange={(e) => setInput(e.target.value)} disabled={loading} />
-        {loading
-          ? <button type="button" onClick={stop}>Stop</button>
-          : <button type="submit">Send</button>}
-      </form>
-    </div>
-  )
-}
-```
+## Recipes
 
-### System prompt (server-side, recommended)
-
-```ts
-// In your route handler — keeps the prompt private
-body: JSON.stringify({
-  model: 'claude-sonnet-4-6',
-  system: 'You are a friendly support agent for Acme Inc.',
-  messages,
-  stream: true,
-})
-```
-
-### Multiple independent chats
-
-Each `useAIChat` call has a completely isolated store — no context needed:
+### Multiple independent streams
 
 ```tsx
 const claude = useAIChat({ endpoint: '/api/chat?model=claude' })
 const gpt    = useAIChat({ endpoint: '/api/chat?model=gpt' })
 
-// Broadcast the same message to both
 function sendToAll(text: string) {
   claude.sendMessage(text)
   gpt.sendMessage(text)
 }
 ```
+
+Each `useAIChat` call gets its own isolated store. No context needed.
+
+### WebSocket transport
+
+```ts
+const chat = useAIChat({
+  endpoint: 'wss://your-server.example.com/ws/chat',
+  transport: 'ws',
+})
+```
+
+Same hook API. Use WebSocket when the server also needs to push events independently of user messages.
 
 ### Shared client via context
 
@@ -504,115 +417,38 @@ function App() {
     </AIChatProvider>
   )
 }
-
-function MainChat() {
-  const { messages, sendMessage, loading } = useAIChat({} as any)
-  // ...
-}
-```
-
-### Programmatic control
-
-```tsx
-const { sendMessage, clearMessages, stop, messages } = useAIChat({ endpoint: '/api/chat' })
-
-// Send on mount (e.g., welcome message)
-useEffect(() => { sendMessage('Say hello briefly.') }, [])
-
-// Reset
-function newChat() {
-  stop()
-  clearMessages()
-}
-
-// Read last assistant reply
-const lastReply = messages.findLast((m) => m.role === 'assistant')?.content
 ```
 
 ---
 
-## API Reference
+## Compliance
 
-### `useAIChat(options)`
+Any server in any language can be RAIS-compliant. Verify yours:
 
-Returns `UseAIChatReturn`:
-
-```ts
-interface UseAIChatReturn {
-  messages:      Message[]
-  sendMessage:   (content: string) => Promise<void>
-  loading:       boolean
-  stop:          () => void
-  error:         string | null
-  clearMessages: () => void
-}
+```bash
+npx rais-compliance http://localhost:3001/api/chat
 ```
 
-### `<Chat />`
-
-| Prop | Type | Required | Description |
-|---|---|---|---|
-| `messages` | `Message[]` | yes | Message array from `useAIChat` |
-| `onSend` | `(text: string) => void` | yes | Called when user submits |
-| `onStop` | `() => void` | no | Abort handler — shows Stop button |
-| `loading` | `boolean` | no | Enables typing indicator |
-| `placeholder` | `string` | no | Input placeholder text |
-| `className` | `string` | no | Extra CSS class on root `div` |
-
-### `<MessageList />`
-
-| Prop | Type | Description |
-|---|---|---|
-| `messages` | `Message[]` | Messages to render |
-| `loading` | `boolean` | Show animated typing indicator |
-| `className` | `string` | Extra CSS class |
-
-### `<ChatInput />`
-
-| Prop | Type | Description |
-|---|---|---|
-| `onSend` | `(text: string) => void` | Submit handler |
-| `onStop` | `() => void` | Abort handler |
-| `loading` | `boolean` | Disable input, show Stop button |
-| `placeholder` | `string` | Textarea placeholder |
-| `disabled` | `boolean` | Hard-disable the input |
-
-### `<MarkdownRenderer />`
-
-| Prop | Type | Description |
-|---|---|---|
-| `content` | `string` | Markdown string to render |
-| `className` | `string` | Extra CSS class on wrapper |
-
-Renders GitHub-Flavored Markdown with syntax-highlighted code blocks and a copy button on each.
-
-### `createAIClient(options)`
-
-```ts
-import { createAIClient } from '@react-ai-stream/core'
-
-const client = createAIClient({ endpoint: '/api/chat' })
-const client = createAIClient({ provider: 'openai', apiKey: '...', model: 'gpt-4o' })
-const client = createAIClient({ provider: 'anthropic', apiKey: '...', model: 'claude-sonnet-4-6' })
-```
-
-Returns `AIClient` — pass to `useAIChat({ client })` or `<AIChatProvider client={...}>`.
+See [`rais-spec/COMPLIANCE.md`](rais-spec/COMPLIANCE.md) for the full checklist and [`rais-spec/COMPATIBILITY.md`](rais-spec/COMPATIBILITY.md) for language implementation status.
 
 ---
 
-## Community
+## Contributing
 
-- [GitHub Discussions](https://github.com/trimooo/react-ai-stream/discussions) — questions, ideas, and show-and-tell
-- [Open an issue](https://github.com/trimooo/react-ai-stream/issues) — bug reports and feature requests
-- [Contributing guide](./CONTRIBUTING.md) — setup, guidelines, good first issues
+**Community adapters wanted** — Svelte, Solid, Hono, Fastify, Rails, and Go are the highest-demand targets. Any server that emits RAIS events is a valid adapter. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for setup and good-first-issues.
 
-## Built with react-ai-stream
+**Protocol proposals** — Extensions to the RAIS protocol go through the [`rfcs/`](rfcs/) process. Read the RFC README before opening a proposal.
 
-Using react-ai-stream in a project? [Open a discussion](https://github.com/trimooo/react-ai-stream/discussions/categories/show-and-tell) or PR this table.
+- [GitHub Discussions](https://github.com/trimooo/react-ai-stream/discussions) — questions, ideas, show-and-tell
+- [Open an issue](https://github.com/trimooo/react-ai-stream/issues) — bugs and feature requests
+
+## Built with RAIS
 
 | Project | Description |
-|---|---|
-| [Live demo](https://react-ai-stream-example.vercel.app) | 3-model parallel streaming — Groq × Llama 3.3, Llama 3.1, Llama 4 Scout |
+|---------|-------------|
+| [Live demo](https://react-ai-stream-example.vercel.app) | 3-model parallel streaming — Groq × Llama 3.3 / 3.1 / 4 Scout |
+
+Using RAIS in a project? [Open a discussion](https://github.com/trimooo/react-ai-stream/discussions/categories/show-and-tell) or PR this table.
 
 ---
 

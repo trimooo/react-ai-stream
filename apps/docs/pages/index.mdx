@@ -1,6 +1,6 @@
 ---
-title: react-ai-stream — Backend-agnostic AI streaming for React
-description: One hook. Any provider. Build streaming AI chat with OpenAI, Anthropic, Groq, or your own backend in minutes.
+title: react-ai-stream — Universal AI streaming infrastructure
+description: RAIS Protocol — stream AI responses from any server to any client. React hook, Vue composable, Express middleware, Python helper.
 ---
 
 import { Callout, Cards, Card } from 'nextra/components'
@@ -31,11 +31,11 @@ export const ForCard = ({ title, items }) => (
   </div>
 )
 
-# Backend-agnostic AI streaming for React
+# Universal AI streaming infrastructure
 
-**Build ChatGPT-style interfaces with OpenAI, Anthropic, Groq, or your own backend.**
+**One wire protocol. Any server. Any client framework.**
 
-Your frontend should not care whether responses come from OpenAI, Anthropic, Groq, FastAPI, Node.js, or your own inference server. `react-ai-stream` keeps the React layer completely decoupled from whatever produces the stream.
+The **RAIS Protocol** (React AI Stream) is a minimal three-event SSE standard for streaming AI responses from any backend to any frontend. This monorepo ships everything you need to implement it: a React hook, Vue composable, Express middleware, Python helper, DevTools panel, and a scaffolding CLI.
 
 ```bash npm2yarn
 npm install @react-ai-stream/react
@@ -45,9 +45,15 @@ npm install @react-ai-stream/react
 
 ---
 
-## 10 lines to a streaming chat
+## 30 seconds to a streaming chat
 
-Install, point at your backend, render. That's the full mental model.
+Scaffold a full working app:
+
+```bash
+npx create-ai-stream-app
+```
+
+Or install manually and point at your backend:
 
 ```tsx
 'use client'
@@ -129,13 +135,33 @@ Compare this to libraries that import `@anthropic-ai/sdk` directly in client cod
 
 ---
 
-## Three packages, one idea
+## The RAIS ecosystem
 
-| Package | Role | Size |
+The wire protocol is called **RAIS** (React AI Stream). Any server that emits RAIS events works with any RAIS client — regardless of framework or language.
+
+### Frontend clients
+
+| Package | Language | Role |
 |---|---|---|
-| `@react-ai-stream/core` | SSE parser, message store, abort utils | ~6 kB |
-| `@react-ai-stream/react` | `useAIChat` hook + `AIChatProvider` context | ~8 kB |
-| `@react-ai-stream/ui` | `<Chat>`, `<MessageList>`, `<MarkdownRenderer>` | ~12 kB |
+| `@react-ai-stream/react` | React | `useAIChat` hook + `AIChatProvider` context (~8 kB) |
+| `@react-ai-stream/ui` | React | `<Chat>`, `<MessageList>`, `<MarkdownRenderer>` (~12 kB) |
+| `@react-ai-stream/vue` | Vue 3 | `useAIChat` composable — same API surface |
+
+### Server adapters
+
+| Package | Language | Role |
+|---|---|---|
+| `@react-ai-stream/express` | Node.js | `raisMiddleware()` — drop into any Express app |
+| `rais` | Python | `stream_response()` — works with FastAPI, Starlette, Django |
+
+### Tooling
+
+| Package | Role |
+|---|---|
+| `@react-ai-stream/core` | SSE parser, message store, abort utils — no framework dep (~6 kB) |
+| `@react-ai-stream/devtools` | Floating DevTools panel — live token log, timing, tok/s |
+| `create-ai-stream-app` | CLI scaffolding — `npx create-ai-stream-app` |
+| `rais-compliance` | Compliance test runner — `npx rais-compliance <endpoint>` |
 
 `@react-ai-stream/react` has **no dependency on** `@react-ai-stream/ui`. Use the hook alone and wire it to Tailwind, shadcn/ui, or anything else. The UI package is optional.
 
@@ -145,9 +171,9 @@ Compare this to libraries that import `@anthropic-ai/sdk` directly in client cod
 
 <Cards>
   <Card title="Quickstart — streaming in 5 minutes" href="/quickstart" />
-  <Card title="Why backend-agnostic?" href="/concepts/why-backend-agnostic" />
-  <Card title="Hook architecture" href="/concepts/hook-architecture" />
-  <Card title="Custom UI example" href="/examples/custom-ui" />
-  <Card title="Provider setup (Anthropic, OpenAI, Groq)" href="/providers" />
+  <Card title="RAIS Protocol spec" href="/spec" />
+  <Card title="Server & framework adapters" href="/adapters" />
+  <Card title="Copy-paste templates" href="/templates" />
+  <Card title="DevTools" href="/devtools" />
   <Card title="useAIChat API reference" href="/reference/useaichat" />
 </Cards>

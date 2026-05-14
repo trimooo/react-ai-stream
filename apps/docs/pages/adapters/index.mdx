@@ -1,0 +1,21 @@
+import { Cards, Card } from 'nextra/components'
+
+# Server & Framework Adapters
+
+RAIS adapters bring the protocol to more languages and frameworks. Any server that emits RAIS-compliant SSE works with every RAIS client — React, Vue, or anything else.
+
+<Cards>
+  <Card title="Express (Node.js)" href="/adapters/express" />
+  <Card title="Vue 3" href="/adapters/vue" />
+  <Card title="Python (FastAPI / Starlette)" href="/adapters/python" />
+</Cards>
+
+## How adapters work
+
+Every adapter does one thing: convert a stream of AI tokens into RAIS-compliant SSE.
+
+```
+LLM provider  →  adapter  →  SSE (RAIS events)  →  useAIChat hook
+```
+
+The React and Vue hooks don't know which adapter produced the stream. This is the point: swap the server without touching the frontend.

@@ -1,0 +1,139 @@
+import { Callout } from 'nextra/components'
+
+# Multi-model comparison
+
+Stream the same prompt to multiple models simultaneously and compare their responses side-by-side. Each model gets its own isolated `useAIChat` instance — independent state, independent loading, independent abort.
+
+<Callout type="info">
+  This is exactly how the [live demo](https://react-ai-stream-example.vercel.app) works.
+</Callout>
+
+## Server — `/app/api/chat/route.ts`
+
+The server accepts a `?model=` query param and routes to the right provider:
+
+```ts
+import { NextRequest } from 'next/server'
+
+export const runtime = 'edge'
+
+interface Message { role: string; content: string }
+
+function chunk(data: object) {
+  return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`)
+}
+
+export async function POST(req: NextRequest) {
+  const model = req.nextUrl.searchParams.get('model') ?? 'llama-3.3-70b-versatile'
+  const { messages } = (await req.json()) as { messages: Message[] }
+  const apiKey = process.env.GROQ_API_KEY!
+
+  const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, messages, stream: true }),
+    signal: req.signal,
+  })
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = upstream.body!.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+        for (const part of parts) {
+          const line = part.split('\n').find(l => l.startsWith('data: '))
+          if (!line) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') { controller.enqueue(chunk({ type: 'done' })); controller.close(); return }
+          try {
+            const text = JSON.parse(data)?.choices?.[0]?.delta?.content
+            if (text) controller.enqueue(chunk({ type: 'text', text }))
+          } catch { /* skip */ }
+        }
+      }
+      controller.enqueue(chunk({ type: 'done' })); controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+## Client — `CompareChat.tsx`
+
+```tsx
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { MessageList } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+import { useState } from 'react'
+
+const MODELS = [
+  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B' },
+  { id: 'llama-3.1-8b-instant',    label: 'Llama 3.1 8B' },
+  { id: 'llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout' },
+]
+
+function ModelPane({ model, input }: { model: typeof MODELS[0]; input: string }) {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: `/api/chat?model=${model.id}`,
+  })
+
+  // Let parent trigger sends
+  // (see CompareChat below for how this wires up)
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', fontWeight: 600, fontSize: '0.875rem' }}>
+        {model.label} {loading && <span style={{ color: '#9ca3af', fontWeight: 400 }}>streaming…</span>}
+      </div>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <MessageList messages={messages} loading={loading} />
+      </div>
+    </div>
+  )
+}
+
+// For a simpler approach, use refs to expose sendMessage from each pane.
+// See the full example at apps/example/components/DemoChat.tsx in the repo.
+export default function CompareChat() {
+  const [input, setInput] = useState('')
+
+  return (
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ flex: 1, display: 'flex', gap: 12, padding: 12, overflow: 'hidden' }}>
+        {MODELS.map(m => <ModelPane key={m.id} model={m} input={input} />)}
+      </div>
+      <form
+        style={{ padding: 12, borderTop: '1px solid #e5e7eb', display: 'flex', gap: 8 }}
+        onSubmit={e => { e.preventDefault(); /* trigger all panes */ setInput('') }}
+      >
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Ask all models…"
+          style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: 6, border: '1px solid #d1d5db' }}
+        />
+        <button type="submit" style={{ padding: '0.6rem 1.25rem', borderRadius: 6, background: '#3b82f6', color: '#fff', border: 'none' }}>
+          Compare
+        </button>
+      </form>
+    </div>
+  )
+}
+```
+
+See the [full working implementation](https://github.com/trimooo/react-ai-stream/tree/master/apps/example/components/DemoChat.tsx) in the repo for the complete ref-based approach that coordinates all panes from a single input.
+
+## `.env.local`
+
+```
+GROQ_API_KEY=gsk_...
+```

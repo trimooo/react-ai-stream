@@ -19,6 +19,7 @@ export { createAIClient, OpenAIProvider, AnthropicProvider, CustomProvider } fro
 export { createMessageStore } from './store/message-store.js'
 export type { MessageStore } from './store/message-store.js'
 export { parseSSE } from './streaming/sse-parser.js'
+export { streamWebSocket } from './streaming/ws-parser.js'
 export { normalizeOpenAIChunk, normalizeAnthropicChunk, normalizeCustomChunk } from './streaming/chunk-normalizer.js'
 export { AIStreamError, ProviderError, ParseError, isAbortError } from './utils/errors.js'
 export { createAbortController } from './utils/abort.js'

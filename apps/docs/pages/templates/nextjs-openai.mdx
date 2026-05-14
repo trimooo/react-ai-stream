@@ -1,0 +1,154 @@
+import { Tabs, Tab, Callout } from 'nextra/components'
+
+# Next.js + OpenAI
+
+A complete Next.js 15 App Router app streaming GPT-4o-mini responses via the RAIS protocol.
+
+<Callout type="tip">
+  Scaffold this automatically: `npx create-ai-stream-app` → choose **OpenAI**.
+</Callout>
+
+## Install
+
+```bash
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+## Server — `/app/api/chat/route.ts`
+
+```ts
+import { NextRequest } from 'next/server'
+
+export const runtime = 'edge'
+
+interface Message { role: string; content: string }
+
+function chunk(data: object) {
+  return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`)
+}
+
+export async function POST(req: NextRequest) {
+  const { messages } = (await req.json()) as { messages: Message[] }
+  const apiKey = process.env.OPENAI_API_KEY!
+
+  const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: 'gpt-4o-mini', messages, stream: true }),
+    signal: req.signal,
+  })
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = upstream.body!.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+        for (const part of parts) {
+          const line = part.split('\n').find(l => l.startsWith('data: '))
+          if (!line) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') { controller.enqueue(chunk({ type: 'done' })); controller.close(); return }
+          try {
+            const parsed = JSON.parse(data)
+            const text = parsed.choices?.[0]?.delta?.content
+            if (text) controller.enqueue(chunk({ type: 'text', text }))
+          } catch { /* skip */ }
+        }
+      }
+      controller.enqueue(chunk({ type: 'done' }))
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+## Client — `/app/page.tsx`
+
+<Tabs items={['Drop-in Chat', 'Custom UI', 'Hooks only']}>
+  <Tab>
+    ```tsx
+    'use client'
+    import { Chat } from '@react-ai-stream/ui'
+    import '@react-ai-stream/ui/styles'
+    import { useAIChat } from '@react-ai-stream/react'
+
+    export default function Page() {
+      const chat = useAIChat({ endpoint: '/api/chat' })
+      return (
+        <main style={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+          <Chat {...chat} placeholder="Ask GPT-4o anything…" />
+        </main>
+      )
+    }
+    ```
+  </Tab>
+  <Tab>
+    ```tsx
+    'use client'
+    import { useAIChat } from '@react-ai-stream/react'
+    import { useState } from 'react'
+
+    export default function Page() {
+      const { messages, sendMessage, loading, stop } = useAIChat({ endpoint: '/api/chat' })
+      const [input, setInput] = useState('')
+      return (
+        <div className="flex flex-col h-dvh">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.filter(m => m.role !== 'system').map(m => (
+              <div key={m.id} className={m.role === 'user' ? 'text-right' : ''}>
+                <span className="inline-block bg-zinc-100 rounded-xl px-3 py-2 text-sm">
+                  {m.content}
+                </span>
+              </div>
+            ))}
+          </div>
+          <form className="p-3 flex gap-2" onSubmit={e => { e.preventDefault(); sendMessage(input); setInput('') }}>
+            <input value={input} onChange={e => setInput(e.target.value)} className="flex-1 border rounded-full px-4 py-2 text-sm" />
+            {loading
+              ? <button type="button" onClick={stop}>Stop</button>
+              : <button type="submit">Send</button>
+            }
+          </form>
+        </div>
+      )
+    }
+    ```
+  </Tab>
+  <Tab>
+    ```tsx
+    'use client'
+    import { useAIChat } from '@react-ai-stream/react'
+    import { useState } from 'react'
+
+    export default function Page() {
+      const { messages, sendMessage, loading } = useAIChat({ endpoint: '/api/chat' })
+      const [input, setInput] = useState('')
+      return (
+        <div>
+          {messages.map(m => <p key={m.id}><b>{m.role}:</b> {m.content}</p>)}
+          <form onSubmit={e => { e.preventDefault(); sendMessage(input); setInput('') }}>
+            <input value={input} onChange={e => setInput(e.target.value)} disabled={loading} />
+            <button type="submit" disabled={loading}>Send</button>
+          </form>
+        </div>
+      )
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## `.env.local`
+
+```
+OPENAI_API_KEY=sk-...
+```

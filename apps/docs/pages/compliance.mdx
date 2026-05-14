@@ -1,0 +1,126 @@
+import { Callout, Tabs, Tab } from 'nextra/components'
+
+# RAIS Compliance
+
+Verify that any server is RAIS Protocol v1 compliant using the `rais-compliance` CLI.
+
+## Run compliance tests
+
+```bash
+npx rais-compliance http://localhost:3001/api/chat
+```
+
+Don't have a server yet? Start the built-in mock server:
+
+```bash
+npx rais-compliance serve
+# → http://localhost:3001/api/chat
+
+# Then in another terminal:
+npx rais-compliance http://localhost:3001/api/chat
+```
+
+Example output:
+
+```
+RAIS Protocol v1 Compliance Test
+Endpoint: http://localhost:3001/api/chat
+
+  MUST (normative)
+    headers.content-type           ✓ Content-Type is text/event-stream
+    headers.cache-control          ✓ Cache-Control: no-cache present
+    events.format                  ✓ All 12 data lines are valid JSON
+    events.text-type               ✓ All 10 text events have a "text" string field
+    events.done                    ✓ Exactly one done event, last in stream
+    events.no-after-done           ✓ No events emitted after done
+    events.has-text-tokens         ✓ Received 10 text token(s)
+
+  SHOULD (recommended)
+    headers.accel-buffering        ⚠ X-Accel-Buffering header not set
+    events.sse-id                  ⚠ No id: fields — add SSE event IDs for reconnect safety
+
+  ⚠  2 warned · 7 passed
+
+  RAIS v1 Core compliant (warnings present)
+  Fix warnings to reach RAIS v1 Recommended
+```
+
+## Custom test messages
+
+```bash
+npx rais-compliance http://localhost:3001/api/chat \
+  --messages '[{"role":"user","content":"Respond with one sentence."}]'
+```
+
+## Certification levels
+
+| Level | Criteria |
+|-------|----------|
+| **RAIS v1 Core** | All MUST tests pass |
+| **RAIS v1 Recommended** | All MUST + SHOULD tests pass |
+| **RAIS v1 Full** | Recommended + reconnect support (`id:` + `Last-Event-ID`) |
+
+## What gets tested
+
+### MUST (failures block certification)
+
+| Test | What it checks |
+|------|----------------|
+| `headers.content-type` | Response has `Content-Type: text/event-stream` |
+| `headers.cache-control` | Response has `Cache-Control: no-cache` |
+| `events.format` | Every `data:` line is valid JSON |
+| `events.text-type` | Every `text` event has a `text` string field |
+| `events.done` | Stream ends with exactly one `done` event |
+| `events.no-after-done` | No events emitted after `done` |
+| `events.has-text-tokens` | At least one `text` token received |
+
+### SHOULD (warnings only)
+
+| Test | What it checks |
+|------|----------------|
+| `headers.accel-buffering` | `X-Accel-Buffering: no` is set (nginx proxy safety) |
+| `events.sse-id` | Events have `id:` fields for reconnect support |
+
+## Fixing common failures
+
+<Callout type="warning">
+  **Missing `Content-Type: text/event-stream`** — Set this header before writing any response body. In Express: `res.setHeader('Content-Type', 'text/event-stream')`. In Next.js: include it in the `Response` headers.
+</Callout>
+
+<Callout type="warning">
+  **No `done` event** — Your server must emit `data: {"type":"done"}\n\n` when the LLM finishes. Without it, clients wait forever for a stream that is already complete.
+</Callout>
+
+<Callout type="info">
+  **`X-Accel-Buffering` warning** — Only needed when running behind nginx. Add `X-Accel-Buffering: no` to prevent nginx from buffering the SSE stream. Without it, nginx may hold events until its buffer fills.
+</Callout>
+
+## Mock server scenarios
+
+Use the built-in mock server to test specific edge cases:
+
+```bash
+npx rais-compliance serve --scenario slow       # 200ms between tokens — test buffer logic
+npx rais-compliance serve --scenario error      # partial stream then error event
+npx rais-compliance serve --scenario malformed  # non-JSON lines + unknown event types
+npx rais-compliance serve --scenario chunked    # events split across network writes
+npx rais-compliance serve --scenario no-done    # intentional compliance failure — no done event
+npx rais-compliance serve --port 4000           # custom port
+```
+
+| Scenario | Expected result |
+|----------|----------------|
+| `normal` | RAIS v1 Recommended |
+| `slow` | All MUST pass |
+| `error` | All MUST pass — error terminates stream correctly |
+| `malformed` | All MUST pass — malformed lines skipped gracefully |
+| `chunked` | All MUST pass — buffer logic correct |
+| `no-done` | `events.done` FAILS — intentional |
+
+---
+
+## Full compliance checklist
+
+The complete normative checklist is in [`rais-spec/COMPLIANCE.md`](https://github.com/trimooo/react-ai-stream/blob/master/rais-spec/COMPLIANCE.md).
+
+The formal specification is in [`rais-spec/SPEC.md`](https://github.com/trimooo/react-ai-stream/blob/master/rais-spec/SPEC.md).

@@ -1,0 +1,98 @@
+import { Callout } from 'nextra/components'
+
+# Why RAIS Exists
+
+<Callout type="info">
+  This is a philosophy document, not a technical reference. It explains the motivation behind the protocol and the ecosystem we are trying to build.
+</Callout>
+
+---
+
+## The problem
+
+Every AI application that streams responses from a language model faces the same plumbing problem: how does a chunk of generated text get from the model to the user's screen, incrementally, in real time?
+
+The answer seems obvious — Server-Sent Events. Stream the tokens as they arrive. What is not obvious is that every team solving this problem solves it differently. The OpenAI SDK uses one format. The Anthropic SDK uses another. Vercel AI SDK wraps both in a third. Most teams end up with bespoke parsing logic tied to the specific provider they chose when they started.
+
+The result is a fragmented landscape where:
+
+- Frontend code is tightly coupled to one provider's event format
+- Switching providers requires changing UI code, not just server code
+- Different teams solving the same problem cannot share tooling or components
+- Every new AI framework re-invents the same streaming wire format
+
+RAIS exists to establish a common format. A minimal formalization of what a well-designed streaming layer already looks like.
+
+---
+
+## Why provider lock-in at the wire level is dangerous
+
+Most developers understand SDK lock-in. Fewer notice that lock-in at the **wire format** level is worse.
+
+When your frontend parses `content_block_delta` events from Anthropic's SSE stream directly, you have coupled your frontend to one provider's *internal format decisions*. Anthropic can change that format — and has. Your frontend breaks.
+
+The right abstraction: your server speaks RAIS, your frontend speaks RAIS, neither knows which LLM is behind the endpoint. The server is the only thing that knows, and the server is the right place for that knowledge to live.
+
+This is the same pattern that made JDBC work for databases. The insight is not new. It just had not been applied to AI streaming.
+
+---
+
+## Why transport standards matter
+
+Protocols feel abstract until they fail. When they work, they are invisible infrastructure — the thing that lets unrelated systems interoperate without coordination.
+
+HTTP is why a browser written in C++ can load a page from a server written in Rust without either knowing about the other. RAIS's ambition is more modest: let any AI backend talk to any streaming frontend, regardless of which language wrote each side.
+
+That ambition is achievable with three event types. The simplicity is not a limitation — it is the point.
+
+---
+
+## Why frontend frameworks should not own the protocol
+
+A streaming format defined by and for a specific framework — Next.js, Remix, SvelteKit — enables tight integration but also means:
+
+- The protocol evolves at the framework's pace, not the protocol's
+- Switching frameworks means re-building streaming from scratch
+- Server implementations in other languages must target framework-specific expectations
+- The "standard" is controlled by whoever controls the framework
+
+RAIS is defined at the HTTP layer, not the framework layer. Any framework can implement it. Any framework can consume it. The framework adapter is a thin wrapper, not the protocol itself.
+
+---
+
+## Why additive evolution matters
+
+Protocols age poorly when they break compatibility. The upgrade treadmill — where every new version forces simultaneous updates to every client and server — is a strong force against adoption.
+
+RAIS v1 is designed to never break. Not "probably won't break" — never. Unknown event types are silently ignored. New fields are always optional. New capabilities arrive as new event types, not modifications to existing ones.
+
+The cost is that some things take longer to standardize. That cost is worth paying. Predictability is the foundation that lets the ecosystem grow.
+
+---
+
+## What RAIS is not
+
+RAIS is not an agent framework. It does not define tool invocation, memory, retrieval, or orchestration.
+
+RAIS is not a UI framework. It does not define how messages are displayed or how conversations are structured.
+
+RAIS is not a provider SDK. It defines what your server emits *after* it has talked to OpenAI or Anthropic.
+
+RAIS is the single thin layer between "my server talked to an LLM" and "my frontend showed the user the response, token by token." That layer should be standardized. Everything else can be whatever it needs to be.
+
+---
+
+## The outcome
+
+The strongest version of this future:
+
+- A developer building a React chat widget can swap their backend from Python to Go without touching their frontend
+- A Vue dashboard uses the same streaming infrastructure as a React mobile app
+- A new AI provider ships a RAIS-compliant endpoint and immediately works with every RAIS client in existence
+- Framework authors, server authors, and client authors work independently, with compliance tests as the shared contract
+
+That is a future where AI streaming is solved infrastructure, not repeated plumbing.
+
+---
+
+*Full version of this document: [`rais-spec/PHILOSOPHY.md`](https://github.com/trimooo/react-ai-stream/blob/master/rais-spec/PHILOSOPHY.md)*

@@ -25,6 +25,8 @@ export interface AIClient {
 
 export interface CustomEndpointOptions {
   endpoint: string
+  /** Transport protocol. Defaults to 'sse'. Use 'ws' for WebSocket endpoints (ws:// or wss://). */
+  transport?: 'sse' | 'ws'
   headers?: Record<string, string>
   body?: Record<string, unknown>
 }

@@ -1,0 +1,143 @@
+import { Callout } from 'nextra/components'
+
+# AI Support Chat Widget
+
+A floating support chat button that expands into a chat panel. Uses `useAIChat` with a system prompt that gives the assistant a customer support persona.
+
+<Callout type="tip">
+  Drop this into any Next.js app. The widget is self-contained — no context providers needed.
+</Callout>
+
+## `SupportChat.tsx`
+
+```tsx
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { useState, useRef, useEffect } from 'react'
+
+const SYSTEM_PROMPT =
+  "You are a helpful support agent. Be concise, friendly, and solution-focused. " +
+  "If you don't know something, say so clearly rather than guessing."
+
+export function SupportChat() {
+  const [open, setOpen] = useState(false)
+  const [input, setInput] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  const { messages, sendMessage, loading, stop, clearMessages } = useAIChat({
+    endpoint: '/api/chat',
+    initialMessages: [{ role: 'system', content: SYSTEM_PROMPT }],
+  })
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const visible = messages.filter(m => m.role !== 'system')
+
+  return (
+    <>
+      {/* Floating button */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          position: 'fixed', bottom: 24, right: 24,
+          width: 52, height: 52, borderRadius: '50%',
+          background: '#3b82f6', color: '#fff',
+          border: 'none', cursor: 'pointer', fontSize: 22,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+          zIndex: 1000,
+        }}
+        aria-label={open ? 'Close chat' : 'Open support chat'}
+      >
+        {open ? '✕' : '💬'}
+      </button>
+
+      {/* Panel */}
+      {open && (
+        <div style={{
+          position: 'fixed', bottom: 88, right: 24,
+          width: 360, height: 500,
+          background: '#fff', borderRadius: 12,
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+          display: 'flex', flexDirection: 'column',
+          zIndex: 999,
+        }}>
+          {/* Header */}
+          <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Support</span>
+            <button onClick={clearMessages} style={{ fontSize: '0.75rem', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Clear
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem 1rem' }}>
+            {visible.length === 0 && (
+              <p style={{ color: '#9ca3af', fontSize: '0.875rem', textAlign: 'center', marginTop: '2rem' }}>
+                Hi! How can I help you today?
+              </p>
+            )}
+            {visible.map(m => (
+              <div key={m.id} style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div style={{
+                  maxWidth: '80%', padding: '0.5rem 0.75rem', borderRadius: 10, fontSize: '0.875rem',
+                  background: m.role === 'user' ? '#3b82f6' : '#f3f4f6',
+                  color: m.role === 'user' ? '#fff' : '#111',
+                }}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ color: '#9ca3af', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Typing…</div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Input */}
+          <form
+            onSubmit={e => { e.preventDefault(); if (!input.trim()) return; sendMessage(input); setInput('') }}
+            style={{ padding: '0.75rem', borderTop: '1px solid #f3f4f6', display: 'flex', gap: 6 }}
+          >
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Ask a question…"
+              disabled={loading}
+              style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: '0.875rem', outline: 'none' }}
+            />
+            {loading
+              ? <button type="button" onClick={stop} style={{ padding: '0.5rem 0.75rem', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>Stop</button>
+              : <button type="submit" style={{ padding: '0.5rem 0.75rem', borderRadius: 6, background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>Send</button>
+            }
+          </form>
+        </div>
+      )}
+    </>
+  )
+}
+```
+
+## Usage
+
+Add to your root layout:
+
+```tsx
+// app/layout.tsx
+import { SupportChat } from '@/components/SupportChat'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <SupportChat />
+      </body>
+    </html>
+  )
+}
+```
+
+The widget appears on every page as a floating button — zero impact on page layout.

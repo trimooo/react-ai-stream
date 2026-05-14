@@ -1,0 +1,117 @@
+import { Callout } from 'nextra/components'
+
+# FastAPI + React
+
+A Python FastAPI backend streaming RAIS-compliant SSE, consumed by a React frontend.
+
+<Callout type="tip">
+  FastAPI's `StreamingResponse` and Python's async generators make RAIS trivial to implement.
+</Callout>
+
+## Install
+
+**Backend:**
+```bash
+pip install fastapi uvicorn anthropic python-dotenv
+```
+
+**Frontend:**
+```bash
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+## Server — `main.py`
+
+```python
+import json
+import asyncio
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+import anthropic
+
+app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+client = anthropic.Anthropic()
+
+class Message(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: list[Message]
+
+
+def rais_chunk(data: dict) -> str:
+    return f"data: {json.dumps(data)}\n\n"
+
+
+async def stream_response(messages: list[Message]):
+    try:
+        with client.messages.stream(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            messages=[m.model_dump() for m in messages if m.role != "system"],
+        ) as stream:
+            for text in stream.text_stream:
+                yield rais_chunk({"type": "text", "text": text})
+                await asyncio.sleep(0)  # yield control to event loop
+        yield rais_chunk({"type": "done"})
+    except Exception as e:
+        yield rais_chunk({"type": "error", "error": str(e)})
+
+
+@app.post("/api/chat")
+async def chat(request: ChatRequest):
+    return StreamingResponse(
+        stream_response(request.messages),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+```
+
+Run with: `uvicorn main:app --reload --port 3001`
+
+## Client — `App.tsx`
+
+```tsx
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+import { useAIChat } from '@react-ai-stream/react'
+
+export default function App() {
+  const chat = useAIChat({ endpoint: 'http://localhost:3001/api/chat' })
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Chat {...chat} />
+    </div>
+  )
+}
+```
+
+## Using OpenAI instead
+
+Replace the `stream_response` function:
+
+```python
+from openai import AsyncOpenAI
+
+openai = AsyncOpenAI()
+
+async def stream_response(messages: list[Message]):
+    try:
+        stream = await openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[m.model_dump() for m in messages],
+            stream=True,
+        )
+        async for chunk in stream:
+            text = chunk.choices[0].delta.content
+            if text:
+                yield rais_chunk({"type": "text", "text": text})
+        yield rais_chunk({"type": "done"})
+    except Exception as e:
+        yield rais_chunk({"type": "error", "error": str(e)})
+```

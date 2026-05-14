@@ -1,6 +1,6 @@
 {
   "name": "@react-ai-stream/core",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "Backend-agnostic SSE streaming engine and message store for react-ai-stream.",
   "keywords": ["react", "ai", "streaming", "sse", "server-sent-events", "anthropic", "openai", "groq", "llm", "backend-agnostic"],
   "license": "MIT",

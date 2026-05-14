@@ -1,0 +1,123 @@
+import { Callout, Tabs, Tab } from 'nextra/components'
+
+# RAIS Reference Server
+
+`rais-server` is a standalone RAIS Protocol v1 server. Run it with any API key and you have a compliant streaming endpoint in seconds — no code required.
+
+<Callout type="info">
+  `rais-server` is also the **canonical reference implementation** of the RAIS Protocol server side. If you are building a RAIS server in another language, reading the source code at [`packages/rais-server/`](https://github.com/trimooo/react-ai-stream/tree/master/packages/rais-server) shows exactly what a compliant implementation looks like.
+</Callout>
+
+## Quick start
+
+```bash
+export OPENAI_API_KEY=sk-...
+npx rais-server
+```
+
+Output:
+
+```
+  RAIS Server
+
+  Provider    openai
+  Model       gpt-4o-mini
+  Endpoint    http://localhost:3001/api/chat
+
+  Test with:
+    npx rais-compliance http://localhost:3001/api/chat
+    curl -N -X POST http://localhost:3001/api/chat \
+         -H 'Content-Type: application/json' \
+         -d '{"messages":[{"role":"user","content":"hello"}]}'
+```
+
+## Provider auto-detection
+
+`rais-server` reads your environment variables and picks a provider automatically:
+
+| Env variable | Provider | Default model |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | anthropic | claude-haiku-4-5-20251001 |
+| `OPENAI_API_KEY` | openai | gpt-4o-mini |
+| `GROQ_API_KEY` | groq | llama-3.3-70b-versatile |
+
+If multiple keys are set, Anthropic takes priority.
+
+## Options
+
+```bash
+npx rais-server [options]
+
+  --provider <name>    openai | anthropic | groq
+  --model <name>       Override the default model
+  --port <n>           Port (default: 3001)
+  --system <text>      System prompt
+  --max-tokens <n>     Max tokens (default: 1024)
+  --no-cors            Disable CORS headers
+```
+
+## Examples
+
+<Tabs items={['OpenAI', 'Anthropic', 'Groq', 'Custom model']}>
+  <Tab>
+```bash
+export OPENAI_API_KEY=sk-...
+npx rais-server --provider openai --model gpt-4o
+```
+  </Tab>
+  <Tab>
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+npx rais-server --provider anthropic --model claude-sonnet-4-6
+```
+  </Tab>
+  <Tab>
+```bash
+export GROQ_API_KEY=gsk_...
+npx rais-server --provider groq --model llama-3.3-70b-versatile
+```
+  </Tab>
+  <Tab>
+```bash
+export OPENAI_API_KEY=sk-...
+npx rais-server --model o1-mini --system "You are a coding assistant."
+```
+  </Tab>
+</Tabs>
+
+## Use as a development backend
+
+Point any RAIS client at `http://localhost:3001/api/chat`:
+
+```tsx
+const chat = useAIChat({ endpoint: 'http://localhost:3001/api/chat' })
+```
+
+This is useful when you are building a custom frontend and want a real streaming backend before writing any server code.
+
+## Verify compliance
+
+```bash
+npx rais-compliance http://localhost:3001/api/chat
+```
+
+The reference server is designed to pass RAIS v1 Recommended (all MUST + SHOULD tests).
+
+## API
+
+The server exposes a single endpoint:
+
+```
+POST /api/chat
+Content-Type: application/json
+
+{
+  "messages": [
+    {"role": "user", "content": "Hello"}
+  ]
+}
+```
+
+Response: `text/event-stream` RAIS v1 SSE stream.
+
+All other routes return `404`. `OPTIONS` requests return `204` with CORS headers.

@@ -1,0 +1,31 @@
+{
+  "name": "create-ai-stream-app",
+  "version": "0.1.0",
+  "description": "Create a new AI streaming app powered by the RAIS protocol in seconds.",
+  "keywords": ["ai", "streaming", "sse", "rais", "react", "nextjs", "scaffolding", "create-app", "llm"],
+  "license": "MIT",
+  "bin": {
+    "create-ai-stream-app": "./dist/index.cjs"
+  },
+  "files": ["dist", "templates"],
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "git+https://github.com/trimooo/react-ai-stream.git", "directory": "packages/create-ai-stream-app" },
+  "homepage": "https://github.com/trimooo/react-ai-stream#readme",
+  "bugs": { "url": "https://github.com/trimooo/react-ai-stream/issues" },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.0",
+    "picocolors": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "rimraf": "^6.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Q&A and ideas (Discussions)
+  - name: Q&A and integration help (Discussions)
     url: https://github.com/trimooo/react-ai-stream/discussions
-    about: Questions, integration help, and feature proposals — use Discussions before opening an issue
+    about: Questions about useAIChat, provider setup, TypeScript, RAIS implementation help
+  - name: RFC proposals (Discussions)
+    url: https://github.com/trimooo/react-ai-stream/discussions
+    about: Discuss protocol extensions informally before writing a full RFC

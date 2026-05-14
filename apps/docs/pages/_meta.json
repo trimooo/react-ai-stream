@@ -11,6 +11,11 @@
     "title": "Providers"
   },
   "providers": "Providers",
+  "---adapters": {
+    "type": "separator",
+    "title": "Adapters"
+  },
+  "adapters": "Server & Framework Adapters",
   "---ui": {
     "type": "separator",
     "title": "UI Components"
@@ -21,13 +26,24 @@
     "title": "Examples"
   },
   "examples": "Examples",
+  "---templates": {
+    "type": "separator",
+    "title": "Templates"
+  },
+  "templates": "Templates",
   "---reference": {
     "type": "separator",
     "title": "Reference"
   },
   "reference": "API Reference",
   "architecture": "Architecture",
+  "spec": "RAIS Protocol",
+  "why-rais": "Why RAIS Exists",
+  "devtools": "DevTools",
+  "compliance": "Compliance",
+  "rais-server": "Reference Server",
   "stats": "Stats",
   "recipes": "Recipes",
-  "faq": "FAQ"
+  "faq": "FAQ",
+  "roadmap": "Ecosystem Roadmap"
 }

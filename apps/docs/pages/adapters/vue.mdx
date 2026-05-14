@@ -1,0 +1,104 @@
+import { Callout } from 'nextra/components'
+
+# Vue 3
+
+`@react-ai-stream/vue` provides a `useAIChat` composable with the same API surface as the React hook. It uses Vue's `shallowRef` for reactive state and `onUnmounted` for cleanup — no Vuex, no Pinia, no global store.
+
+## Install
+
+```bash
+npm install @react-ai-stream/vue
+```
+
+## Usage
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useAIChat } from '@react-ai-stream/vue'
+
+const { messages, sendMessage, loading, stop, error } = useAIChat({
+  endpoint: '/api/chat',
+})
+
+const input = ref('')
+
+function handleSubmit() {
+  if (!input.value.trim() || loading.value) return
+  sendMessage(input.value)
+  input.value = ''
+}
+</script>
+
+<template>
+  <div class="chat">
+    <ul>
+      <li v-for="m in messages.filter(m => m.role !== 'system')" :key="m.id">
+        <strong>{{ m.role }}:</strong> {{ m.content }}
+      </li>
+      <li v-if="loading">Thinking…</li>
+    </ul>
+
+    <p v-if="error" class="error">{{ error }}</p>
+
+    <form @submit.prevent="handleSubmit">
+      <input v-model="input" :disabled="loading" placeholder="Ask anything…" />
+      <button v-if="loading" type="button" @click="stop">Stop</button>
+      <button v-else type="submit">Send</button>
+    </form>
+  </div>
+</template>
+```
+
+<Callout type="info">
+  Vue auto-unwraps `shallowRef` values inside `<template>`, so you use `messages` directly in the template but `messages.value` in `<script setup>`.
+</Callout>
+
+## API
+
+### `useAIChat(options)`
+
+**Options** — same as the React hook:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `endpoint` | `string` | Your RAIS-compliant API route |
+| `client` | `AIClient` | Pre-built client from `createAIClient` |
+| `provider` | `'openai' \| 'anthropic'` | Direct provider (dev only — keeps key in browser) |
+| `apiKey` | `string` | API key for direct provider mode |
+| `onToken` | `(token: string) => void` | Fires per token |
+| `onComplete` | `(message: Message) => void` | Fires when stream ends |
+| `onError` | `(error: Error) => void` | Fires on error |
+
+**Returns:**
+
+| Value | Type | Description |
+|-------|------|-------------|
+| `messages` | `ShallowRef<Message[]>` | Full conversation history |
+| `loading` | `ShallowRef<boolean>` | True while streaming |
+| `error` | `ShallowRef<string \| null>` | Last error message |
+| `sendMessage` | `(content: string) => Promise<void>` | Send a user message |
+| `stop` | `() => void` | Abort the current stream |
+| `clearMessages` | `() => void` | Reset the conversation |
+
+## Multiple instances
+
+Like the React hook, each `useAIChat` call is completely isolated — its own state, its own abort controller. You can run multiple models in parallel:
+
+```vue
+<script setup>
+import { useAIChat } from '@react-ai-stream/vue'
+
+const gpt = useAIChat({ endpoint: '/api/chat?model=gpt-4o-mini' })
+const claude = useAIChat({ endpoint: '/api/chat?model=claude-sonnet-4-6' })
+</script>
+```
+
+## Server
+
+The Vue composable talks to the same RAIS-compliant endpoints as the React hook. Use any backend:
+
+- **Next.js API routes** — [see template](/templates/nextjs-openai)
+- **Express** — [`@react-ai-stream/express`](/adapters/express)
+- **FastAPI** — [`rais` Python package](/adapters/python)
+- **Any SSE server** — see the [RAIS Protocol spec](/spec)

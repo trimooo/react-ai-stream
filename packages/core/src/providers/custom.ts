@@ -1,22 +1,30 @@
 import { BaseProvider } from './base.js'
 import { parseSSE } from '../streaming/sse-parser.js'
+import { streamWebSocket } from '../streaming/ws-parser.js'
 import { normalizeCustomChunk } from '../streaming/chunk-normalizer.js'
 import { isAbortError } from '../utils/errors.js'
 import type { Message, StreamChunk, CustomEndpointOptions } from '../types.js'
 
 export class CustomProvider extends BaseProvider {
   private readonly endpoint: string
+  private readonly transport: 'sse' | 'ws'
   private readonly headers: Record<string, string>
   private readonly extraBody: Record<string, unknown>
 
   constructor(options: CustomEndpointOptions) {
     super()
     this.endpoint = options.endpoint
+    this.transport = options.transport ?? 'sse'
     this.headers = options.headers ?? {}
     this.extraBody = options.body ?? {}
   }
 
   async *stream(messages: Message[], signal: AbortSignal): AsyncIterable<StreamChunk> {
+    if (this.transport === 'ws') {
+      yield* streamWebSocket(this.endpoint, messages, signal, this.extraBody)
+      return
+    }
+
     const body = {
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       ...this.extraBody,
