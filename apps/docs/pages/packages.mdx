@@ -1,0 +1,449 @@
+---
+title: All Packages — react-ai-stream ecosystem
+description: Every package in the react-ai-stream ecosystem — install commands, code snippets, and full docs links in one place.
+---
+
+import { Callout, Tabs, Tab } from 'nextra/components'
+import dynamic from 'next/dynamic'
+
+export const PackageGrid = dynamic(() => import('../components/PackageGrid'), { ssr: false })
+
+# Ecosystem Packages
+
+Everything in the `react-ai-stream` ecosystem — React, Vue, Express, Python, CLI tools, and DevTools. All in one place.
+
+<PackageGrid />
+
+---
+
+## Frontend clients
+
+### @react-ai-stream/react
+
+The core hook. Handles SSE parsing, message accumulation, loading state, and abort — no UI included.
+
+```bash
+npm install @react-ai-stream/react
+```
+
+```tsx
+import { useAIChat } from '@react-ai-stream/react'
+
+export default function Chat() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',   // any RAIS-compliant endpoint
+  })
+
+  return (
+    <div>
+      {messages.map(m => (
+        <div key={m.id}>{m.role}: {m.content}</div>
+      ))}
+      <button onClick={() => sendMessage('Hello')}>Send</button>
+      {loading && <button onClick={stop}>Stop</button>}
+    </div>
+  )
+}
+```
+
+**Returns:** `messages`, `sendMessage`, `loading`, `stop`, `reset`, `error`
+
+**Options:** `endpoint`, `headers`, `onToken`, `onComplete`, `onError`, `initialMessages`
+
+[Full API reference →](/reference/useaichat)
+
+---
+
+### @react-ai-stream/ui
+
+Drop-in React components wired to the hook. Optional — works with any UI library.
+
+```bash
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+```tsx
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',
+  })
+  return (
+    <div style={{ height: '80vh' }}>
+      <Chat
+        messages={messages}
+        onSend={sendMessage}
+        onStop={stop}
+        loading={loading}
+      />
+    </div>
+  )
+}
+```
+
+**Components:** `<Chat>`, `<MessageList>`, `<ChatInput>`, `<MarkdownRenderer>`
+
+[Component docs →](/ui)
+
+---
+
+### @react-ai-stream/vue
+
+Same `useAIChat` API surface for Vue 3. Composable, not component-bound.
+
+```bash
+npm install @react-ai-stream/vue
+```
+
+```vue
+<script setup lang="ts">
+import { useAIChat } from '@react-ai-stream/vue'
+import { ref } from 'vue'
+
+const { messages, sendMessage, loading, stop } = useAIChat({
+  endpoint: '/api/chat',
+})
+
+const input = ref('')
+</script>
+
+<template>
+  <div>
+    <div v-for="msg in messages" :key="msg.id">
+      <strong>{{ msg.role }}:</strong> {{ msg.content }}
+    </div>
+    <input v-model="input" @keyup.enter="sendMessage(input)" />
+    <button v-if="loading" @click="stop">Stop</button>
+  </div>
+</template>
+```
+
+[Vue adapter docs →](/adapters/vue)
+
+---
+
+## Server adapters
+
+### @react-ai-stream/express
+
+One-line Express middleware that makes any route RAIS-compliant.
+
+```bash
+npm install @react-ai-stream/express
+```
+
+<Tabs items={['Built-in provider', 'Custom generator', 'With CORS']}>
+<Tab>
+```ts
+import express from 'express'
+import { raisMiddleware } from '@react-ai-stream/express'
+
+const app = express()
+app.use(express.json())
+
+app.post('/api/chat', raisMiddleware({
+  provider: 'openai',
+  apiKey: process.env.OPENAI_API_KEY,
+  model: 'gpt-4o-mini',
+}))
+
+// Or Anthropic:
+app.post('/api/claude', raisMiddleware({
+  provider: 'anthropic',
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  model: 'claude-haiku-4-5-20251001',
+}))
+
+app.listen(3001)
+```
+</Tab>
+<Tab>
+```ts
+import express from 'express'
+import { raisMiddleware } from '@react-ai-stream/express'
+import type { StreamChunk } from '@react-ai-stream/express'
+import Anthropic from '@anthropic-ai/sdk'
+
+const app = express()
+app.use(express.json())
+
+const client = new Anthropic()
+
+app.post('/api/chat', raisMiddleware({
+  handler: async function* (messages, signal) {
+    const stream = await client.messages.stream(
+      { model: 'claude-sonnet-4-6', messages, max_tokens: 1024 },
+      { signal },
+    )
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        yield { type: 'text', text: event.delta.text } satisfies StreamChunk
+      }
+    }
+    yield { type: 'done' } satisfies StreamChunk
+  },
+}))
+
+app.listen(3001)
+```
+</Tab>
+<Tab>
+```ts
+import express from 'express'
+import cors from 'cors'
+import { raisMiddleware } from '@react-ai-stream/express'
+
+const app = express()
+app.use(cors({ origin: 'http://localhost:3000' }))
+app.use(express.json())
+
+app.post('/api/chat', raisMiddleware({
+  provider: 'openai',
+  apiKey: process.env.OPENAI_API_KEY,
+}))
+
+app.listen(3001)
+```
+
+```tsx
+// React app (different port)
+const chat = useAIChat({ endpoint: 'http://localhost:3001/api/chat' })
+```
+</Tab>
+</Tabs>
+
+[Express adapter docs →](/adapters/express)
+
+---
+
+### rais (Python)
+
+FastAPI / Starlette / Django helper. Install from PyPI:
+
+```bash
+pip install rais
+```
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+from rais import stream_response, rais_event
+
+app = FastAPI()
+
+class ChatRequest(BaseModel):
+    messages: list[dict]
+
+@app.post("/api/chat")
+async def chat(req: ChatRequest):
+    # Wrap any async generator that yields strings
+    async def generate():
+        yield "Hello"
+        yield ", world"
+        yield "!"
+
+    return stream_response(generate())
+```
+
+**With OpenAI:**
+
+```python
+from openai import AsyncOpenAI
+from rais import stream_response
+
+client = AsyncOpenAI()
+
+@app.post("/api/chat")
+async def chat(req: ChatRequest):
+    async def generate():
+        stream = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=req.messages,
+            stream=True,
+        )
+        async for chunk in stream:
+            if text := chunk.choices[0].delta.content:
+                yield text
+
+    return stream_response(generate())
+```
+
+[Python adapter docs →](/adapters/python)
+
+---
+
+## Tooling
+
+### @react-ai-stream/core
+
+Foundation package. SSE parser, message store, abort utilities. Framework-agnostic.
+
+```bash
+npm install @react-ai-stream/core
+```
+
+```ts
+import { parseSSE, createMessageStore } from '@react-ai-stream/core'
+
+// Parse RAIS events from a fetch response
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  body: JSON.stringify({ messages }),
+})
+
+for await (const event of parseSSE(response.body!)) {
+  if (event.type === 'text') process.stdout.write(event.text)
+  if (event.type === 'done') break
+  if (event.type === 'error') throw new Error(event.error)
+}
+```
+
+[Type reference →](/reference/types)
+
+---
+
+### @react-ai-stream/devtools
+
+Floating DevTools panel. Add to any RAIS app to see live token rate, timing, and raw events.
+
+```bash
+npm install @react-ai-stream/devtools
+```
+
+```tsx
+import { RAISDevTools } from '@react-ai-stream/devtools'
+
+// In your root layout or any component
+export default function Layout({ children }) {
+  return (
+    <>
+      {children}
+      {process.env.NODE_ENV === 'development' && (
+        <RAISDevTools position="bottom-right" />
+      )}
+    </>
+  )
+}
+```
+
+The panel shows:
+- **Live token log** — every RAIS event as it arrives
+- **tok/s** — tokens per second in real time
+- **Timing** — first token latency and total stream duration
+- **Endpoint** — which URL each message hit
+
+[DevTools docs →](/devtools)
+
+---
+
+## CLIs
+
+### create-ai-stream-app
+
+Scaffold a complete working app with one command:
+
+```bash
+npx create-ai-stream-app
+```
+
+```
+✔ Project name: my-chat-app
+✔ Provider: OpenAI
+✔ UI style: Chat component
+✔ Install dependencies? Yes
+
+Scaffolding my-chat-app...
+
+✓ Created app/page.tsx
+✓ Created app/api/chat/route.ts
+✓ Created .env.local
+✓ Installed dependencies
+
+cd my-chat-app && npm run dev
+```
+
+[Quickstart →](/quickstart)
+
+---
+
+### rais-compliance
+
+Verify that any HTTP endpoint is RAIS v1 compliant:
+
+```bash
+npx rais-compliance http://localhost:3000/api/chat
+```
+
+```
+Testing http://localhost:3000/api/chat
+
+✓  Content-Type: text/event-stream
+✓  Cache-Control: no-cache
+✓  Events are valid JSON
+✓  text events have .text field
+✓  Stream ends with done event
+✓  Error events have .error field
+✓  No data after done
+✓  Abort handling
+✓  Handles concurrent requests
+✓  Responds within 5s
+
+All 10 tests passed
+RAIS v1 Recommended ✓
+```
+
+Add the badge to your server's README:
+
+```md
+![RAIS v1 Recommended](https://img.shields.io/badge/RAIS-v1%20Recommended-22c55e)
+```
+
+[Compliance docs →](/compliance)
+
+---
+
+## Dependency map
+
+```
+create-ai-stream-app   (scaffolding CLI, standalone)
+
+@react-ai-stream/core  (no deps, foundation)
+         ↑
+@react-ai-stream/react (depends on core)
+         ↑
+@react-ai-stream/ui    (depends on react + core)
+
+@react-ai-stream/vue   (depends on core, Vue 3 peer dep)
+
+@react-ai-stream/express  (depends on core, Express peer dep)
+
+@react-ai-stream/devtools (depends on core)
+
+rais                   (Python, standalone)
+rais-compliance        (CLI, standalone)
+```
+
+<Callout type="info">
+  `@react-ai-stream/react` does **not** depend on `@react-ai-stream/ui`. Install only what you need.
+</Callout>
+
+---
+
+## Version matrix
+
+| Package | Version | Status |
+|---------|---------|--------|
+| `@react-ai-stream/core` | 1.0.0 | stable |
+| `@react-ai-stream/react` | 1.0.0 | stable |
+| `@react-ai-stream/ui` | 1.0.0 | stable |
+| `@react-ai-stream/vue` | 1.0.1 | new |
+| `@react-ai-stream/express` | 1.0.1 | new |
+| `@react-ai-stream/devtools` | 1.0.0 | stable |
+| `create-ai-stream-app` | 1.0.0 | stable |
+| `rais-compliance` | 1.0.1 | stable |
+| `rais-server` | 1.0.1 | stable |
+| `rais` (Python) | 1.0.0 | new |

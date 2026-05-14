@@ -7,6 +7,7 @@ import { Callout, Cards, Card } from 'nextra/components'
 import dynamic from 'next/dynamic'
 
 export const LiveDemo = dynamic(() => import('../components/LiveDemo'), { ssr: false })
+export const PackageGrid = dynamic(() => import('../components/PackageGrid'), { ssr: false })
 
 export const HeroCTAs = () => (
   <div style={{display:'flex',gap:12,flexWrap:'wrap',margin:'28px 0 8px'}}>
@@ -17,6 +18,10 @@ export const HeroCTAs = () => (
     <a href="/quickstart"
       style={{display:'inline-flex',alignItems:'center',gap:6,background:'#0f172a',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
       Quickstart →
+    </a>
+    <a href="/packages"
+      style={{display:'inline-flex',alignItems:'center',gap:6,background:'#7c3aed22',color:'#7c3aed',border:'1px solid #7c3aed44',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
+      All packages →
     </a>
     <a href="https://github.com/trimooo/react-ai-stream" target="_blank" rel="noreferrer"
       style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f8fafc',border:'1px solid #e2e8f0',color:'#374151',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
@@ -34,11 +39,27 @@ export const ForCard = ({ title, items }) => (
   </div>
 )
 
+export const FeaturePill = ({ icon, label }) => (
+  <span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#7c3aed11',color:'#7c3aed',border:'1px solid #7c3aed33',borderRadius:20,padding:'4px 12px',fontSize:12.5,fontWeight:600,margin:'3px'}}>
+    {icon} {label}
+  </span>
+)
+
 # Universal AI streaming infrastructure
 
 **One wire protocol. Any server. Any client framework.**
 
-The **RAIS Protocol** (React AI Stream) is a minimal three-event SSE standard for streaming AI responses from any backend to any frontend. This monorepo ships everything you need to implement it: a React hook, Vue composable, Express middleware, Python helper, DevTools panel, and a scaffolding CLI.
+The **RAIS Protocol** (React AI Stream) is a minimal three-event SSE standard for streaming AI responses from any backend to any frontend. This monorepo ships everything you need: a React hook, Vue composable, Express middleware, Python helper, DevTools panel, and a scaffolding CLI.
+
+<div style={{margin:'16px 0'}}>
+  <FeaturePill icon="⚛" label="React" />
+  <FeaturePill icon="💚" label="Vue 3" />
+  <FeaturePill icon="🚂" label="Express" />
+  <FeaturePill icon="🐍" label="Python / FastAPI" />
+  <FeaturePill icon="🔍" label="DevTools" />
+  <FeaturePill icon="✓" label="Compliance CLI" />
+  <FeaturePill icon="🚀" label="Scaffolding CLI" />
+</div>
 
 ```bash npm2yarn
 npm install @react-ai-stream/react
@@ -60,13 +81,11 @@ No API key. No install. Streaming starts instantly.
 
 ## 30 seconds to a streaming chat
 
-Scaffold a full working app:
-
 ```bash
 npx create-ai-stream-app
 ```
 
-Or install manually and point at your backend:
+Or install manually:
 
 ```tsx
 'use client'
@@ -82,7 +101,13 @@ export default function Page() {
 }
 ```
 
-The hook returns plain data. You can drop `<Chat />` in for zero-config, or wire `messages` to any UI you already have. [Full quickstart →](/quickstart)
+The hook returns plain data. Drop `<Chat />` in for zero-config, or wire `messages` to any UI. [Full quickstart →](/quickstart)
+
+---
+
+## All packages — click to explore
+
+<PackageGrid />
 
 ---
 
@@ -124,8 +149,6 @@ Three event types. That's the entire contract between your server and your React
 - **Multiple providers simultaneously.** Run `useAIChat` three times with three endpoints — each instance is fully isolated.
 - **Any backend language.** FastAPI, Go, Rails, Cloudflare Workers — if it can stream SSE, it works.
 
-Compare this to libraries that import `@anthropic-ai/sdk` directly in client code: your LLM choice is now coupled to your UI layer, visible in your bundle, and locked to that SDK's format.
-
 [Deep dive: Why backend-agnostic? →](/concepts/why-backend-agnostic)
 
 ---
@@ -140,7 +163,7 @@ Compare this to libraries that import `@anthropic-ai/sdk` directly in client cod
 | Bring your own UI | First-class | No |
 | Event hooks (`onToken`, `onComplete`) | ✓ | Limited |
 | Backend language | Any (HTTP+SSE) | Node.js preferred |
-| Direct provider (no server) | ✓ dev only | ✓ |
+| Vue support | ✓ | No |
 
 <Callout type="info">
   Both are MIT and well-maintained. Choose react-ai-stream when you want portable streaming primitives with no framework opinions. Choose Vercel AI SDK when you need tight Next.js RSC integration.
@@ -148,35 +171,27 @@ Compare this to libraries that import `@anthropic-ai/sdk` directly in client cod
 
 ---
 
-## The RAIS ecosystem
+## The RAIS wire protocol
 
-The wire protocol is called **RAIS** (React AI Stream). Any server that emits RAIS events works with any RAIS client — regardless of framework or language.
+Any server in any language that emits these three event types works with any RAIS client:
 
-### Frontend clients
+```
+Content-Type: text/event-stream
 
-| Package | Language | Role |
-|---|---|---|
-| `@react-ai-stream/react` | React | `useAIChat` hook + `AIChatProvider` context (~8 kB) |
-| `@react-ai-stream/ui` | React | `<Chat>`, `<MessageList>`, `<MarkdownRenderer>` (~12 kB) |
-| `@react-ai-stream/vue` | Vue 3 | `useAIChat` composable — same API surface |
+data: {"type":"text","text":"Hello"}
 
-### Server adapters
+data: {"type":"text","text":" world"}
 
-| Package | Language | Role |
-|---|---|---|
-| `@react-ai-stream/express` | Node.js | `raisMiddleware()` — drop into any Express app |
-| `rais` | Python | `stream_response()` — works with FastAPI, Starlette, Django |
+data: {"type":"done"}
+```
 
-### Tooling
+That's the entire protocol. Verify any server with:
 
-| Package | Role |
-|---|---|
-| `@react-ai-stream/core` | SSE parser, message store, abort utils — no framework dep (~6 kB) |
-| `@react-ai-stream/devtools` | Floating DevTools panel — live token log, timing, tok/s |
-| `create-ai-stream-app` | CLI scaffolding — `npx create-ai-stream-app` |
-| `rais-compliance` | Compliance test runner — `npx rais-compliance <endpoint>` |
+```bash
+npx rais-compliance http://localhost:3000/api/chat
+```
 
-`@react-ai-stream/react` has **no dependency on** `@react-ai-stream/ui`. Use the hook alone and wire it to Tailwind, shadcn/ui, or anything else. The UI package is optional.
+[Full protocol spec →](/spec) · [Compliance checker →](/compliance)
 
 ---
 
@@ -184,9 +199,11 @@ The wire protocol is called **RAIS** (React AI Stream). Any server that emits RA
 
 <Cards>
   <Card title="Quickstart — streaming in 5 minutes" href="/quickstart" />
+  <Card title="All packages — full reference" href="/packages" />
+  <Card title="▶ Live Playground" href="/playground" />
   <Card title="RAIS Protocol spec" href="/spec" />
   <Card title="Server & framework adapters" href="/adapters" />
-  <Card title="Copy-paste templates" href="/templates" />
   <Card title="DevTools" href="/devtools" />
+  <Card title="Copy-paste templates" href="/templates" />
   <Card title="useAIChat API reference" href="/reference/useaichat" />
 </Cards>
