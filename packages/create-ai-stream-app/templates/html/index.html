@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>__PROJECT_NAME__</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #020817; color: #e2e8f0; height: 100dvh; display: flex; flex-direction: column; }
+    header { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    header h1 { font-size: 15px; font-weight: 700; }
+    header p { font-size: 12px; color: #475569; }
+    #config-bar { padding: 8px 16px; background: rgba(59,91,255,0.08); border-bottom: 1px solid rgba(59,91,255,0.15); display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; flex-shrink: 0; }
+    #config-bar input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; color: #e2e8f0; padding: 4px 8px; font-size: 12px; font-family: ui-monospace, monospace; }
+    #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .empty { text-align: center; color: #334155; margin-top: 60px; font-size: 14px; }
+    .bubble { max-width: 78%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+    .user { align-self: flex-end; background: #3B5BFF; color: #fff; border-bottom-right-radius: 3px; }
+    .assistant { align-self: flex-start; background: rgba(255,255,255,0.06); color: #e2e8f0; border-bottom-left-radius: 3px; }
+    .cursor::after { content: '▋'; animation: blink 0.9s step-end infinite; color: #3B5BFF; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .error-msg { align-self: center; font-size: 12px; color: #f87171; padding: 6px 12px; background: rgba(239,68,68,0.1); border-radius: 6px; }
+    form { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.07); display: flex; gap: 8px; flex-shrink: 0; }
+    textarea { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e2e8f0; padding: 10px 14px; font-size: 14px; font-family: inherit; resize: none; height: 42px; max-height: 140px; overflow-y: auto; line-height: 1.5; outline: none; }
+    textarea:focus { border-color: rgba(59,91,255,0.5); }
+    button { padding: 0 20px; background: #3B5BFF; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    #stop-btn { background: rgba(239,68,68,0.85); }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+    <rect width="100" height="100" rx="14" fill="#0E1116"/>
+    <path d="M28 22 H58 a16 16 0 0 1 0 32 H44 L62 78 H50 L34 56 H40 V46 H56 a6 6 0 0 0 0-12 H40 V78 H28 Z" fill="#F6F4EF"/>
+    <rect y="56" width="100" height="4" fill="#3B5BFF"/>
+    <circle cx="86" cy="58" r="6" fill="#3B5BFF" stroke="#0E1116" stroke-width="3"/>
+  </svg>
+  <div>
+    <h1>__PROJECT_NAME__</h1>
+    <p>RAIS Protocol · zero build step</p>
+  </div>
+</header>
+
+<div id="config-bar">
+  <span>Endpoint:</span>
+  <input id="endpoint-input" value="http://localhost:3001/api/chat" spellcheck="false" />
+</div>
+
+<div id="messages">
+  <p class="empty" id="empty">Send a message to start chatting.</p>
+</div>
+
+<form id="chat-form">
+  <textarea id="input" placeholder="Type a message… (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
+  <button type="submit" id="send-btn">Send</button>
+  <button type="button" id="stop-btn" style="display:none">Stop</button>
+</form>
+
+<script type="module">
+  const messagesEl = document.getElementById('messages')
+  const emptyEl = document.getElementById('empty')
+  const inputEl = document.getElementById('input')
+  const sendBtn = document.getElementById('send-btn')
+  const stopBtn = document.getElementById('stop-btn')
+  const endpointInput = document.getElementById('endpoint-input')
+  const form = document.getElementById('chat-form')
+
+  let messages = []
+  let controller = null
+
+  // Auto-grow textarea
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto'
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px'
+  })
+
+  // Enter to submit, Shift+Enter for newline
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      form.requestSubmit()
+    }
+  })
+
+  function addBubble(role, content, streaming = false) {
+    emptyEl.style.display = 'none'
+    const el = document.createElement('div')
+    el.className = `bubble ${role}${streaming ? ' cursor' : ''}`
+    el.textContent = content
+    messagesEl.appendChild(el)
+    el.scrollIntoView({ block: 'end', behavior: 'smooth' })
+    return el
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const text = inputEl.value.trim()
+    if (!text) return
+
+    inputEl.value = ''
+    inputEl.style.height = '42px'
+    sendBtn.disabled = true
+    stopBtn.style.display = ''
+
+    messages.push({ role: 'user', content: text })
+    addBubble('user', text)
+
+    const endpoint = endpointInput.value.trim()
+    controller = new AbortController()
+
+    const assistantEl = addBubble('assistant', '', true)
+    let accumulated = ''
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages }),
+        signal: controller.signal,
+      })
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const parts = buf.split('\n\n')
+        buf = parts.pop() ?? ''
+        for (const part of parts) {
+          const line = part.split('\n').find(l => l.startsWith('data: '))
+          if (!line) continue
+          try {
+            const ev = JSON.parse(line.slice(6))
+            if (ev.type === 'text' && ev.text) {
+              accumulated += ev.text
+              assistantEl.textContent = accumulated
+              assistantEl.scrollIntoView({ block: 'end' })
+            } else if (ev.type === 'done') {
+              break
+            } else if (ev.type === 'error') {
+              throw new Error(ev.error ?? 'Stream error')
+            }
+          } catch (parseErr) {
+            if (parseErr instanceof SyntaxError) continue
+            throw parseErr
+          }
+        }
+      }
+
+      messages.push({ role: 'assistant', content: accumulated })
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        const errEl = document.createElement('div')
+        errEl.className = 'error-msg'
+        errEl.textContent = `Error: ${err.message}`
+        messagesEl.appendChild(errEl)
+      }
+      if (!accumulated) assistantEl.remove()
+    } finally {
+      assistantEl.classList.remove('cursor')
+      controller = null
+      sendBtn.disabled = false
+      stopBtn.style.display = 'none'
+    }
+  })
+
+  stopBtn.addEventListener('click', () => {
+    controller?.abort()
+  })
+</script>
+</body>
+</html>

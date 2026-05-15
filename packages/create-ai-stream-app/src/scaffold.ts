@@ -32,18 +32,22 @@ async function copyDir(src: string, dest: string, replacements: Record<string, s
   }
 }
 
-function detectPackageManager(): string {
-  const agent = process.env['npm_config_user_agent'] ?? ''
-  if (agent.startsWith('pnpm')) return 'pnpm'
-  if (agent.startsWith('yarn')) return 'yarn'
-  return 'npm'
+function getTemplateDir(config: ProjectConfig): string {
+  switch (config.platform) {
+    case 'html':       return join(TEMPLATES_DIR, 'html')
+    case 'vite-react': return join(TEMPLATES_DIR, 'vite-react')
+    case 'vite-vue':   return join(TEMPLATES_DIR, 'vite-vue')
+    case 'express':    return join(TEMPLATES_DIR, `express-${config.provider}`)
+    case 'fastapi':    return join(TEMPLATES_DIR, `fastapi-${config.provider}`)
+    default:           return join(TEMPLATES_DIR, `nextjs-${config.provider}`)
+  }
 }
 
-function runInstall(cwd: string, pm: string): Promise<void> {
+function runInstall(cwd: string, pm: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(pm, ['install'], { cwd, stdio: 'inherit', shell: true })
+    const child = spawn(pm, args, { cwd, stdio: 'inherit', shell: true })
     child.on('close', (code) =>
-      code === 0 ? resolve() : reject(new Error(`${pm} install exited with code ${code}`)),
+      code === 0 ? resolve() : reject(new Error(`${pm} ${args.join(' ')} exited with code ${code}`)),
     )
   })
 }
@@ -58,32 +62,45 @@ export async function scaffold(config: ProjectConfig) {
 
   s.start(`Scaffolding ${pc.cyan(config.projectName)}`)
 
-  // Copy base provider template
-  const templateDir = join(TEMPLATES_DIR, `nextjs-${config.provider}`)
+  const templateDir = getTemplateDir(config)
   await copyDir(templateDir, destDir, replacements)
 
-  // Apply UI overlay if not the default (chat)
-  if (config.ui !== 'chat') {
+  // Apply UI overlay for Next.js non-default styles
+  if (config.platform === 'nextjs' && config.ui && config.ui !== 'chat') {
     const overlayDir = join(TEMPLATES_DIR, `overlay-${config.ui}`)
-    const overlayExists = await fs
-      .access(overlayDir)
-      .then(() => true)
-      .catch(() => false)
+    const overlayExists = await fs.access(overlayDir).then(() => true).catch(() => false)
     if (overlayExists) await copyDir(overlayDir, destDir, replacements)
   }
 
   s.stop(`${pc.green('✓')} Created ${pc.cyan(config.projectName)}`)
 
-  if (config.install) {
-    const pm = detectPackageManager()
+  if (!config.install) return
+
+  if (config.packageManager === 'pip') {
+    s.start(`Installing dependencies with ${pc.cyan('pip')}`)
+    try {
+      await runInstall(destDir, 'pip', ['install', '-r', 'requirements.txt'])
+      s.stop(`${pc.green('✓')} Dependencies installed`)
+    } catch {
+      s.stop(`${pc.yellow('!')} Install failed — run ${pc.cyan('pip install -r requirements.txt')} inside the project manually`)
+    }
+  } else if (config.packageManager === 'uv') {
+    s.start(`Installing dependencies with ${pc.cyan('uv')}`)
+    try {
+      // uv needs a pyproject.toml for uv sync; fall back to pip install with uv
+      await runInstall(destDir, 'uv', ['pip', 'install', '-r', 'requirements.txt'])
+      s.stop(`${pc.green('✓')} Dependencies installed`)
+    } catch {
+      s.stop(`${pc.yellow('!')} Install failed — run ${pc.cyan('uv pip install -r requirements.txt')} inside the project manually`)
+    }
+  } else {
+    const pm = config.packageManager
     s.start(`Installing dependencies with ${pc.cyan(pm)}`)
     try {
-      await runInstall(destDir, pm)
+      await runInstall(destDir, pm, ['install'])
       s.stop(`${pc.green('✓')} Dependencies installed`)
-    } catch (err) {
-      s.stop(
-        `${pc.yellow('!')} Install failed — run ${pc.cyan(`${pm} install`)} inside the project manually`,
-      )
+    } catch {
+      s.stop(`${pc.yellow('!')} Install failed — run ${pc.cyan(`${pm} install`)} inside the project manually`)
     }
   }
 }

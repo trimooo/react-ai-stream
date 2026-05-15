@@ -1,5 +1,6 @@
 import { DemoChat } from '@/components/DemoChat'
 import { CopyCommand } from '@/components/CopyCommand'
+import { LogoMark } from '@react-ai-stream/ui'
 
 export default function Home() {
   return (
@@ -29,6 +30,7 @@ export default function Home() {
       <header style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#020817', position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(8px)' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <LogoMark size={28} dark />
             <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.4px', color: '#f1f5f9' }}>react-ai-stream</span>
             <span style={{ fontSize: 11, background: 'rgba(124,58,237,0.25)', color: '#c4b5fd', padding: '2px 8px', borderRadius: 20, fontWeight: 600, border: '1px solid rgba(124,58,237,0.35)' }}>v1.0.0</span>
           </div>

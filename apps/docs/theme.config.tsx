@@ -6,9 +6,21 @@ const SITE_URL = 'https://react-ai-stream-docs.vercel.app'
 const GITHUB_URL = 'https://github.com/trimooo/react-ai-stream'
 const DEMO_URL = 'https://react-ai-stream-example.vercel.app'
 
+function RaisMark() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 100 100" fill="none" style={{ display: 'block', flexShrink: 0 }}>
+      <rect x="0" y="0" width="100" height="100" rx="14" fill="#0E1116"/>
+      <path d="M28 22 H58 a16 16 0 0 1 0 32 H44 L62 78 H50 L34 56 H40 V46 H56 a6 6 0 0 0 0 -12 H40 V78 H28 Z" fill="#F6F4EF"/>
+      <rect x="0" y="56" width="100" height="4" fill="#3B5BFF"/>
+      <circle cx="86" cy="58" r="6" fill="#3B5BFF" stroke="#0E1116" strokeWidth="3"/>
+    </svg>
+  )
+}
+
 const config: DocsThemeConfig = {
   logo: (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <RaisMark />
       <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.3px' }}>
         react-ai-stream
       </span>
@@ -53,6 +65,7 @@ const config: DocsThemeConfig = {
     const description = 'One hook. Any provider. Build streaming AI chat with OpenAI, Anthropic, Groq, or your own backend.'
     return (
       <>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content={description} />
         <meta name="keywords" content="react, ai, streaming, chat, hook, anthropic, openai, groq, llm, sse, server-sent events" />

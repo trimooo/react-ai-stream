@@ -19,5 +19,9 @@ export default defineConfig({
   },
   async onSuccess() {
     copyFileSync('src/styles/base.css', 'dist/base.css')
+    const { readFileSync, writeFileSync } = await import('node:fs')
+    for (const f of ['dist/index.mjs', 'dist/index.cjs']) {
+      writeFileSync(f, '"use client";\n' + readFileSync(f, 'utf8'))
+    }
   },
 })

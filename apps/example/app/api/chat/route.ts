@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as RequestBody
     const queryProvider = req.nextUrl.searchParams.get('provider') as RequestBody['provider'] | null
-    const { messages, provider: bodyProvider = 'anthropic' } = body
+    const { messages, provider: bodyProvider = 'groq' } = body
     const provider = queryProvider ?? bodyProvider
 
     let stream: ReadableStream<Uint8Array>

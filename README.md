@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/logo.svg" width="72" height="72" alt="react-ai-stream" />
+</div>
+
 # react-ai-stream
 
 [![CI](https://github.com/trimooo/react-ai-stream/actions/workflows/ci.yml/badge.svg)](https://github.com/trimooo/react-ai-stream/actions/workflows/ci.yml)
@@ -11,6 +15,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/trimooo/react-ai-stream/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-vercel.app-6366f1)](https://react-ai-stream-docs.vercel.app/)
 [![Live Demo](https://img.shields.io/badge/demo-react--ai--stream--example.vercel.app-22c55e)](https://react-ai-stream-example.vercel.app)
+[![AI Stream Studio](https://img.shields.io/badge/studio-ai--stream--studio.vercel.app-3B5BFF)](https://ai-stream-studio.vercel.app)
 [![RAIS v1 Recommended](https://img.shields.io/badge/RAIS-v1%20Recommended-22c55e)](rais-spec/COMPLIANCE.md)
 
 **Universal AI streaming infrastructure.** One wire protocol. Any server. Any client framework.
@@ -52,13 +57,14 @@ The **RAIS Protocol** (React AI Stream) is a minimal three-event SSE standard fo
 
 ### Tooling
 
-| Package | Install | Description |
-|---------|---------|-------------|
+| Package / Tool | Install | Description |
+|----------------|---------|-------------|
 | [`@react-ai-stream/core`](https://www.npmjs.com/package/@react-ai-stream/core) | `npm i @react-ai-stream/core` | SSE parser, chunk normalizer, Zustand store, abort utils |
 | [`@react-ai-stream/devtools`](https://www.npmjs.com/package/@react-ai-stream/devtools) | `npm i -D @react-ai-stream/devtools` | Floating DevTools panel — live token log, timing, tok/s |
 | [`rais-server`](https://www.npmjs.com/package/rais-server) | `npx rais-server` | Reference server CLI — instant RAIS endpoint from any API key |
 | [`rais-compliance`](https://www.npmjs.com/package/rais-compliance) | `npx rais-compliance` | Compliance test runner + mock server |
 | [`create-ai-stream-app`](https://www.npmjs.com/package/create-ai-stream-app) | `npx create-ai-stream-app` | Scaffolding CLI — generates a working Next.js + RAIS app |
+| [AI Stream Studio](https://ai-stream-studio.vercel.app) | web app | Developer playground — inspect, benchmark, compare any SSE endpoint |
 
 > **RAIS v1 is frozen.** Backward compatibility is guaranteed forever. Streams built on RAIS v1 today will work with every future RAIS client. See [`rais-spec/STABILITY.md`](rais-spec/STABILITY.md).
 
@@ -448,6 +454,7 @@ See [`rais-spec/COMPLIANCE.md`](rais-spec/COMPLIANCE.md) for the full checklist 
 | Project | Description |
 |---------|-------------|
 | [Live demo](https://react-ai-stream-example.vercel.app) | 3-model parallel streaming — Groq × Llama 3.3 / 3.1 / 4 Scout |
+| [AI Stream Studio](https://ai-stream-studio.vercel.app) | Developer playground — inspect, benchmark, compare streaming endpoints. Chat with Groq, OpenAI, Anthropic, NVIDIA NIM, or the built-in RAIS demo (no key needed). |
 
 Using RAIS in a project? [Open a discussion](https://github.com/trimooo/react-ai-stream/discussions/categories/show-and-tell) or PR this table.
 

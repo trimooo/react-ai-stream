@@ -4,6 +4,19 @@ import Script from 'next/script'
 export const metadata: Metadata = {
   title: 'react-ai-stream — Universal AI streaming infrastructure',
   description: 'One wire protocol. Any server. Any client framework. Works with Anthropic, OpenAI, Groq, or any streaming endpoint.',
+  icons: { icon: '/favicon.svg' },
+  openGraph: {
+    title: 'react-ai-stream — Universal AI streaming infrastructure',
+    description: 'One wire protocol. Any server. Any client framework.',
+    url: 'https://react-ai-stream-example.vercel.app',
+    siteName: 'react-ai-stream',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'react-ai-stream',
+    description: 'One wire protocol. Any server. Any client framework.',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
