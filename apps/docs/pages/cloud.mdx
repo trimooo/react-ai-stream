@@ -1,0 +1,401 @@
+---
+title: RAIS Cloud — Getting Started
+description: How to get your RAIS API key and start streaming AI responses without managing any provider accounts.
+---
+
+import { Steps, Callout, Tabs, Tab } from 'nextra/components'
+
+# RAIS Cloud
+
+RAIS Cloud is the hosted AI gateway built on top of the open RAIS Protocol.
+**You need a RAIS API key to use it.** Without a key, every request returns `401 Unauthorized`.
+
+<Callout type="warning">
+  **RAIS Cloud is in private beta.** Keys are issued manually. Join the waitlist, and once approved you'll receive your key by email.
+  [→ Join the waitlist](https://react-ai-stream-playground.vercel.app/cloud)
+</Callout>
+
+---
+
+## Why you need a key
+
+RAIS Cloud sits between your app and the AI providers (Groq, OpenAI, Anthropic, Gemini).
+It manages the provider API keys on its side — you never touch them.
+
+```
+Your app  →  RAIS Cloud (your ras_... key)  →  Groq / OpenAI / Anthropic
+```
+
+Without your `ras_...` key, RAIS Cloud has no way to:
+- Know which plan you're on (free vs pro)
+- Enforce your rate limits
+- Track your token usage
+- Bill you correctly
+
+Every single request to `/api/v1/chat` or `/api/v1/usage` **requires** `Authorization: Bearer ras_YOUR_KEY`.
+
+---
+
+## Step 1 — Get your key
+
+<Steps>
+
+### Join the waitlist
+
+Go to [react-ai-stream-playground.vercel.app/cloud](https://react-ai-stream-playground.vercel.app/cloud), scroll to the waitlist section, and enter your email.
+
+You'll see: *"You're #N on the list!"* — that's confirmation.
+
+### Wait for approval
+
+Access is granted manually during private beta.
+When approved, you'll receive an email with:
+
+- Your `ras_test_...` API key (free tier) or `ras_live_...` (paid tier)
+- Your monthly token limit
+- A link to your dashboard
+
+<Callout>
+  **Free key format:** `ras_test_` followed by 40 hex characters<br/>
+  **Paid key format:** `ras_live_` followed by 40 hex characters
+</Callout>
+
+### Copy your key and keep it safe
+
+The key is shown **once** in the email. Store it in your `.env.local` file immediately:
+
+```bash
+RAIS_API_KEY=ras_test_a1b2c3d4e5f6...
+```
+
+Never commit this file to git — it's already in `.gitignore` by default.
+
+</Steps>
+
+---
+
+## Step 2 — Check your dashboard
+
+Once you have a key, go to the dashboard to verify it works:
+
+**→ [react-ai-stream-gateway.vercel.app/dashboard](https://react-ai-stream-gateway.vercel.app/dashboard)**
+
+1. Paste your `ras_...` key in the input field
+2. Click **Load** — you'll see your plan, tokens used, and requests made
+3. Use the **Test Chat** tab to send a live message and confirm the stream works
+
+If you see `401 Invalid key`, double-check there are no extra spaces around the key.
+
+---
+
+## Step 3 — Use the key in your app
+
+### With `useAIChat` (React hook — recommended)
+
+This is the simplest integration. One change to your existing code:
+
+```tsx filename="app/page.tsx"
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: 'https://react-ai-stream-gateway.vercel.app/api/v1/chat',
+    extraHeaders: {
+      Authorization: `Bearer ${process.env.NEXT_PUBLIC_RAIS_API_KEY}`,
+    },
+  })
+
+  return (
+    <div style={{ height: '80vh' }}>
+      <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
+    </div>
+  )
+}
+```
+
+Add to `.env.local`:
+```bash
+NEXT_PUBLIC_RAIS_API_KEY=ras_test_your_key_here
+```
+
+<Callout type="warning">
+  `NEXT_PUBLIC_` exposes the key in the browser bundle. This is fine for a personal project or demo.
+  For production, keep the key server-side — see the [server-side pattern below](#server-side-pattern-production).
+</Callout>
+
+### With curl (quick test)
+
+```bash
+curl -N -X POST https://react-ai-stream-gateway.vercel.app/api/v1/chat \
+  -H "Authorization: Bearer ras_test_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Hello, what can you do?"}]}'
+```
+
+You should see RAIS v1 SSE frames streaming back:
+
+```
+data: {"type":"text","text":"Hello"}
+data: {"type":"text","text":"! I can help you with..."}
+data: {"type":"done"}
+```
+
+If you see `data: {"type":"error","error":"invalid_key"}` — check your key is correct and starts with `ras_`.
+
+### Server-side pattern (production)
+
+Keep the key out of the browser by proxying through your own Next.js API route:
+
+```ts filename="app/api/chat/route.ts"
+export const runtime = 'nodejs'
+
+export async function POST(req: Request) {
+  const body = await req.json()
+
+  const upstream = await fetch(
+    'https://react-ai-stream-gateway.vercel.app/api/v1/chat',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Key stays on the server — never reaches the browser
+        Authorization: `Bearer ${process.env.RAIS_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    }
+  )
+
+  return new Response(upstream.body, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+```tsx filename="app/page.tsx"
+// Now no key in the browser — just point to your own route
+const { messages, sendMessage } = useAIChat({ endpoint: '/api/chat' })
+```
+
+---
+
+## API Reference
+
+### `POST /api/v1/chat`
+
+Streams an AI response using the RAIS v1 protocol.
+
+**Required header:**
+```
+Authorization: Bearer ras_YOUR_KEY
+```
+
+**Request body:**
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Hello" }
+  ],
+  "provider": "groq",
+  "model": "llama-3.3-70b-versatile",
+  "fallback": ["openai", "anthropic"]
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `messages` | `Message[]` | **required** | Full chat history |
+| `provider` | string | `"groq"` | Primary provider to use |
+| `model` | string | Provider default | Override the model |
+| `fallback` | string[] | auto | Ordered fallback if primary fails |
+
+**Response:** `text/event-stream` — RAIS v1 protocol
+
+```
+data: {"type":"text","text":"Hello"}
+data: {"type":"text","text":" world"}
+data: {"type":"done"}
+```
+
+On error:
+```
+data: {"type":"error","error":"rate_limit","message":"Too many requests"}
+```
+
+---
+
+### `GET /api/v1/usage`
+
+Returns token usage and request counts for your key.
+
+**Required header:**
+```
+Authorization: Bearer ras_YOUR_KEY
+```
+
+**Response:**
+```json
+{
+  "key_id": "abc123",
+  "plan": "free",
+  "monthly_limit": 50000,
+  "tokens_used": 12340,
+  "requests": 89
+}
+```
+
+---
+
+### `GET /api/v1/health`
+
+Check if all providers are reachable. No authentication required.
+
+```bash
+curl https://react-ai-stream-gateway.vercel.app/api/v1/health
+```
+
+```json
+{
+  "status": "ok",
+  "providers": {
+    "groq": { "ok": true, "latency_ms": 38 },
+    "openai": { "ok": true, "latency_ms": 121 },
+    "anthropic": { "ok": true, "latency_ms": 95 }
+  },
+  "timestamp": "2026-05-16T10:30:00.000Z"
+}
+```
+
+---
+
+## Error codes
+
+| HTTP | Error code | Meaning | Fix |
+|------|-----------|---------|-----|
+| `401` | `missing_key` | No `Authorization` header | Add `Authorization: Bearer ras_...` |
+| `401` | `invalid_key` | Key doesn't exist or was revoked | Check the key; get a new one from dashboard |
+| `429` | `rate_limit` | Too many requests per minute | Wait 60 seconds and retry |
+| `429` | `token_cap` | Monthly token limit reached | Upgrade plan at the playground |
+| `503` | `provider_error` | All providers in the fallback chain failed | Check `/api/v1/health`; retry later |
+
+---
+
+## Available providers
+
+| Provider | ID | Default model | Notes |
+|----------|----|---------------|-------|
+| Groq | `groq` | `llama-3.3-70b-versatile` | **Default** — lowest latency, fastest streaming |
+| OpenAI | `openai` | `gpt-4o-mini` | GPT-4o, o1 series |
+| Anthropic | `anthropic` | `claude-3-5-haiku-20241022` | Claude 3.5 Sonnet/Haiku |
+| Gemini | `gemini` | `gemini-1.5-flash` | Gemini 1.5 Pro, Flash |
+
+**Automatic fallback:** if `groq` is slow or returns an error, RAIS Cloud automatically falls back through the chain. You can override the chain:
+
+```json
+{ "provider": "anthropic", "fallback": ["openai", "groq"] }
+```
+
+---
+
+## Pricing plans
+
+| Plan | Price | Monthly tokens | Rate limit |
+|------|-------|----------------|------------|
+| **Free** | €0 | 50,000 tokens | 20 req/min |
+| **Pro** | €10/mo | 500,000 tokens | 100 req/min |
+| **Team** | €49/mo | 5,000,000 tokens | 500 req/min |
+| **Enterprise** | Custom | Unlimited | Custom |
+
+<Callout>
+  Free keys use the `ras_test_` prefix. Paid keys use `ras_live_`. Your plan and limits are shown in the [dashboard](https://react-ai-stream-gateway.vercel.app/dashboard).
+</Callout>
+
+To upgrade: [react-ai-stream-playground.vercel.app/cloud](https://react-ai-stream-playground.vercel.app/cloud)
+
+---
+
+## Choosing a provider
+
+You don't need your own API keys for any provider — RAIS Cloud handles all of that.
+
+| Use case | Recommended provider |
+|----------|---------------------|
+| Lowest latency / fastest streaming | `groq` (default) |
+| Long context / complex reasoning | `anthropic` (Claude 3.5 Sonnet) |
+| Widest model selection | `openai` (GPT-4o series) |
+| Cost-efficient at scale | `groq` or `gemini` |
+
+---
+
+## Full example — Next.js app
+
+Everything needed to go from zero to a streaming AI chat in a new Next.js project:
+
+```bash
+npx create-next-app@latest my-chat --typescript --app
+cd my-chat
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+```bash filename=".env.local"
+RAIS_API_KEY=ras_test_your_key_here
+```
+
+```ts filename="app/api/chat/route.ts"
+export const runtime = 'nodejs'
+
+export async function POST(req: Request) {
+  const body = await req.json()
+  const upstream = await fetch(
+    'https://react-ai-stream-gateway.vercel.app/api/v1/chat',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.RAIS_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    }
+  )
+  return new Response(upstream.body, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+```tsx filename="app/page.tsx"
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',
+  })
+  return (
+    <div style={{ height: '100vh' }}>
+      <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
+    </div>
+  )
+}
+```
+
+Run it:
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000` — you have a fully streaming AI chat backed by Groq (with automatic fallback to OpenAI and Anthropic).
+
+---
+
+## Open source commitment
+
+RAIS Protocol, all SDK packages, compliance tools, DevTools, and the playground are MIT open source.
+RAIS Cloud is the optional hosted infrastructure layer — you can self-host the gateway or skip it entirely.
+The protocol is permanent and will never be closed.
+
+[Protocol spec →](/spec) · [Self-host the gateway →](/rais-server) · [GitHub →](https://github.com/trimooo/react-ai-stream)

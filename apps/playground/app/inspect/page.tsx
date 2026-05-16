@@ -100,6 +100,16 @@ export default function InspectPage() {
         </p>
       </div>
 
+      {/* Gateway prompt */}
+      <div style={{ marginBottom: 16, padding: '10px 18px', background: 'rgba(59,91,255,0.06)', border: '1px solid rgba(59,91,255,0.18)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 13, color: '#64748b' }}>
+          Testing the RAIS Cloud gateway? You need a free API key.
+        </div>
+        <a href="/cloud#waitlist" style={{ fontSize: 12, color: '#3B5BFF', textDecoration: 'none', fontWeight: 700, padding: '5px 14px', borderRadius: 6, border: '1px solid rgba(59,91,255,0.3)', background: 'rgba(59,91,255,0.1)', whiteSpace: 'nowrap' }}>
+          Get free key →
+        </a>
+      </div>
+
       {sessionConfig && (
         <div style={{ marginBottom: 16, padding: '10px 16px', background: 'rgba(59,91,255,0.1)', border: '1px solid rgba(59,91,255,0.25)', borderRadius: 8, fontSize: 13, color: '#93c5fd' }}>
           ↗ Session loaded — endpoint and config pre-filled.

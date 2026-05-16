@@ -11,9 +11,9 @@ export const PackageGrid = dynamic(() => import('../components/PackageGrid'), { 
 
 export const HeroCTAs = () => (
   <div style={{display:'flex',gap:12,flexWrap:'wrap',margin:'28px 0 8px'}}>
-    <a href="https://react-ai-stream-example.vercel.app" target="_blank" rel="noreferrer"
-      style={{display:'inline-flex',alignItems:'center',gap:6,background:'#7c3aed',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
-      Live demo ↗
+    <a href="/cloud"
+      style={{display:'inline-flex',alignItems:'center',gap:6,background:'#3B5BFF',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:700}}>
+      🔑 Get your API key →
     </a>
     <a href="/quickstart"
       style={{display:'inline-flex',alignItems:'center',gap:6,background:'#0f172a',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:14,fontWeight:600}}>
@@ -66,6 +66,12 @@ npm install @react-ai-stream/react
 ```
 
 <HeroCTAs />
+
+<Callout type="info">
+  **Want to skip managing AI provider accounts?** RAIS Cloud handles Groq, OpenAI, Anthropic, and Gemini on its side.
+  You only need one `ras_...` key — no Groq account, no OpenAI billing, nothing.
+  [Get your RAIS API key →](/cloud)
+</Callout>
 
 ---
 
@@ -198,7 +204,8 @@ npx rais-compliance http://localhost:3000/api/chat
 ## Next steps
 
 <Cards>
-  <Card title="Quickstart — streaming in 5 minutes" href="/quickstart" />
+  <Card title="🔑 Get your RAIS API key" href="/cloud" />
+  <Card title="Quickstart — two paths, 5 minutes" href="/quickstart" />
   <Card title="All packages — full reference" href="/packages" />
   <Card title="▶ Live Playground" href="/playground" />
   <Card title="RAIS Protocol spec" href="/spec" />

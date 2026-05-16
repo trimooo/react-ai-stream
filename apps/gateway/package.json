@@ -1,16 +1,15 @@
 {
-  "name": "playground",
-  "version": "0.0.0",
+  "name": "gateway",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3002",
+    "dev": "next dev --port 3003",
     "build": "next build",
-    "start": "next start --port 3002",
+    "start": "next start --port 3003",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@react-ai-stream/core": "workspace:*",
-    "@react-ai-stream/ui": "workspace:*",
     "@upstash/redis": "^1.34.0",
     "next": "^15.0.0",
     "react": "^19.0.0",

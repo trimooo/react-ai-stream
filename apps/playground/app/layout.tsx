@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { NavLinks } from '@/components/NavLinks'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ai-stream-studio.vercel.app'),
+  metadataBase: new URL('https://react-ai-stream-playground.vercel.app'),
   title: 'AI Stream Studio — RAIS Protocol Tooling',
   description: 'Benchmark, inspect, and compare AI streaming providers. The definitive developer tool for the RAIS protocol.',
   icons: { icon: '/favicon.svg' },

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { WaitlistForm } from '@/components/WaitlistForm'
 
 export const metadata: Metadata = {
   title: 'AI Stream Studio — The Platform for AI Streaming Infrastructure',
@@ -84,15 +85,15 @@ export default function LandingPage() {
           <span style={{ color: '#3B5BFF' }}>AI Streaming</span> Infrastructure
         </h1>
         <p style={{ margin: '0 auto 36px', maxWidth: 540, fontSize: 18, color: '#64748b', lineHeight: 1.6 }}>
-          Inspect any SSE endpoint. Benchmark providers. Prove RAIS compliance.
-          {' '}<strong style={{ color: '#94a3b8' }}>Test in seconds, no setup required.</strong>
+          Inspect, benchmark, and compare any SSE endpoint — free, no account needed.
+          {' '}<strong style={{ color: '#94a3b8' }}>Ship production AI with the hosted gateway.</strong>
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="/inspect" style={{ padding: '13px 28px', background: '#3B5BFF', color: '#fff', borderRadius: 10, textDecoration: 'none', fontSize: 15, fontWeight: 700, letterSpacing: '-0.3px' }}>
-            Inspect an endpoint →
+          <a href="/cloud#waitlist" style={{ padding: '13px 28px', background: '#3B5BFF', color: '#fff', borderRadius: 10, textDecoration: 'none', fontSize: 15, fontWeight: 700, letterSpacing: '-0.3px' }}>
+            Get free API key →
           </a>
-          <a href="/benchmark" style={{ padding: '13px 28px', background: 'rgba(255,255,255,0.07)', color: '#e2e8f0', borderRadius: 10, textDecoration: 'none', fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)' }}>
-            ⚡ Run benchmark
+          <a href="/inspect" style={{ padding: '13px 28px', background: 'rgba(255,255,255,0.07)', color: '#e2e8f0', borderRadius: 10, textDecoration: 'none', fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.12)' }}>
+            Try the inspector (free)
           </a>
         </div>
       </section>
@@ -224,24 +225,93 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ marginBottom: 80, textAlign: 'center', padding: '56px 40px', background: 'rgba(59,91,255,0.07)', border: '1px solid rgba(59,91,255,0.15)', borderRadius: 20 }}>
-        <h2 style={{ margin: '0 0 12px', fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#f1f5f9' }}>
-          Start inspecting in 30 seconds
+      {/* TWO PATHS CTA */}
+      <section style={{ marginBottom: 80, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ padding: '36px 32px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>Free forever</div>
+          <h3 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.03em' }}>DevTools</h3>
+          <p style={{ margin: '0 0 22px', fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>
+            Inspector, Benchmark, Protocol Diff, Replay, Templates — use everything without signing up.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {['/inspect', '/benchmark', '/compare', '/templates'].map(href => (
+              <a key={href} href={href} style={{ padding: '9px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, color: '#94a3b8', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
+                {href.replace('/', '')} →
+              </a>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: '36px 32px', background: 'rgba(59,91,255,0.07)', border: '1px solid rgba(59,91,255,0.2)', borderRadius: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#3B5BFF', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>API key required</div>
+          <h3 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.03em' }}>RAIS Gateway</h3>
+          <p style={{ margin: '0 0 22px', fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>
+            Multi-provider routing · Retries · Usage analytics · Zero key exposure. Apply and get a free key instantly by email.
+          </p>
+          {[
+            { label: 'Free', desc: '5k tokens/mo' },
+            { label: 'Pro · €10/mo', desc: '100k tokens/mo' },
+            { label: 'Team · €49/mo', desc: '1M tokens/mo' },
+          ].map(t => (
+            <div key={t.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 12, color: '#64748b' }}>
+              <span style={{ fontWeight: 600, color: '#94a3b8' }}>{t.label}</span>
+              <span>{t.desc}</span>
+            </div>
+          ))}
+          <a href="/cloud#waitlist" style={{ display: 'block', textAlign: 'center', marginTop: 20, padding: '11px 0', background: '#3B5BFF', color: '#fff', borderRadius: 9, textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
+            Get free API key →
+          </a>
+        </div>
+      </section>
+
+      {/* RAIS CLOUD WAITLIST */}
+      <section style={{ marginBottom: 80, padding: '56px 40px', background: 'linear-gradient(135deg, rgba(59,91,255,0.08) 0%, rgba(232,121,249,0.06) 100%)', border: '1px solid rgba(59,91,255,0.18)', borderRadius: 20, textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(59,91,255,0.15)', border: '1px solid rgba(59,91,255,0.3)', borderRadius: 20, padding: '3px 14px', marginBottom: 20, fontSize: 11, color: '#93c5fd', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Coming soon · RAIS Cloud
+        </div>
+        <h2 style={{ margin: '0 0 14px', fontSize: 'clamp(1.6rem,3.5vw,2.4rem)', fontWeight: 900, letterSpacing: '-0.05em', color: '#f1f5f9', lineHeight: 1.1 }}>
+          The hosted AI gateway,<br />
+          <span style={{ color: '#3B5BFF' }}>built on RAIS Protocol</span>
         </h2>
-        <p style={{ margin: '0 0 28px', fontSize: 15, color: '#64748b' }}>
-          No account. No install. Just paste an endpoint and go.
+        <p style={{ margin: '0 auto 20px', maxWidth: 500, fontSize: 15, color: '#64748b', lineHeight: 1.65 }}>
+          Drop one line into your app and get multi-provider routing, retries, usage analytics, and zero key exposure — all streaming over RAIS v1.
         </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="/inspect" style={{ padding: '12px 28px', background: '#3B5BFF', color: '#fff', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
-            Open Inspector →
-          </a>
-          <a href="/benchmark" style={{ padding: '12px 28px', background: 'transparent', color: '#93c5fd', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600, border: '1px solid rgba(59,91,255,0.35)' }}>
-            Run Benchmark
-          </a>
-          <a href="https://react-ai-stream-docs.vercel.app/spec" target="_blank" rel="noreferrer" style={{ padding: '12px 28px', background: 'transparent', color: '#475569', borderRadius: 10, textDecoration: 'none', fontSize: 14, fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)' }}>
-            RAIS Spec ↗
-          </a>
+        {/* value bullets */}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
+          {[
+            { icon: '⚡', label: 'Multi-provider routing', sub: 'OpenAI · Anthropic · Groq · Gemini' },
+            { icon: '📊', label: 'Usage analytics', sub: 'Tokens · Cost · Latency' },
+            { icon: '🔑', label: 'Zero key exposure', sub: 'Keys stay server-side' },
+          ].map(b => (
+            <div key={b.label} style={{ padding: '12px 18px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, textAlign: 'left', minWidth: 180 }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>{b.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', marginBottom: 2 }}>{b.label}</div>
+              <div style={{ fontSize: 11, color: '#475569' }}>{b.sub}</div>
+            </div>
+          ))}
+        </div>
+        {/* code snippet */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+          <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '14px 20px', fontFamily: 'ui-monospace, monospace', fontSize: 13, color: '#94a3b8', textAlign: 'left', maxWidth: 480, width: '100%' }}>
+            <span style={{ color: '#475569' }}>{'// Before'}</span>
+            <br />
+            <span style={{ color: '#64748b' }}>{'useAIChat({ endpoint: "/api/chat" })'}</span>
+            <br /><br />
+            <span style={{ color: '#475569' }}>{'// After — one line change'}</span>
+            <br />
+            <span style={{ color: '#93c5fd' }}>{'useAIChat({'}</span>
+            <br />
+            <span style={{ color: '#f1f5f9' }}>{'  endpoint: '}</span>
+            <span style={{ color: '#4ade80' }}>{'"https://react-ai-stream-gateway.vercel.app/api/v1/chat"'}</span>
+            <span style={{ color: '#f1f5f9' }}>{','}</span>
+            <br />
+            <span style={{ color: '#f1f5f9' }}>{'  extraHeaders: { Authorization: `Bearer ${apiKey}` },'}</span>
+            <br />
+            <span style={{ color: '#93c5fd' }}>{'}'}</span>
+          </div>
+        </div>
+        {/* email form */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <WaitlistForm />
         </div>
       </section>
 

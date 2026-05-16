@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: '/gallery',    label: 'Gallery'   },
   { href: '/templates',  label: 'Templates' },
   { href: '/ecosystem',  label: 'Ecosystem' },
+  { href: '/cloud',      label: '☁ Cloud'   },
 ]
 
 export function NavLinks() {

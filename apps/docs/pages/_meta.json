@@ -2,6 +2,15 @@
   "index": "Introduction",
   "playground": "▶ Live Playground",
   "quickstart": "Quickstart",
+  "---cloud": {
+    "type": "separator",
+    "title": "RAIS Cloud"
+  },
+  "cloud": "🔑 Get Your API Key",
+  "---sdk": {
+    "type": "separator",
+    "title": "SDK & Packages"
+  },
   "packages": "📦 All Packages",
   "deploy": "🚀 Deploy to Vercel",
   "---concepts": {
@@ -48,5 +57,6 @@
   "stats": "Stats",
   "recipes": "Recipes",
   "faq": "FAQ",
-  "roadmap": "Ecosystem Roadmap"
+  "roadmap": "Ecosystem Roadmap",
+  "ecosystem": "Ecosystem"
 }

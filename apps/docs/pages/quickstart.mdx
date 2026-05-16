@@ -1,13 +1,118 @@
 ---
 title: Quickstart
-description: Working AI streaming in under 5 minutes
+description: Streaming AI chat in your app — two paths, both under 10 minutes.
 ---
 
 import { Steps, Callout, Tabs, Tab } from 'nextra/components'
 
 # Quickstart
 
-Working AI streaming in a Next.js app in under 5 minutes.
+Two paths. Pick the one that fits your situation.
+
+| | **Path A — RAIS Cloud** | **Path B — Self-hosted** |
+|--|--|--|
+| Own AI provider accounts? | Not needed | Required (Groq, OpenAI, or Anthropic) |
+| Setup time | ~2 min after key arrives | ~5 min |
+| Best for | Getting started fast | Full control, no third-party dependency |
+
+---
+
+## Path A — RAIS Cloud (recommended for most people)
+
+You need a RAIS API key. Without it, the gateway returns `401` and nothing works.
+
+<Steps>
+
+### Get your key
+
+1. Go to [react-ai-stream-playground.vercel.app/cloud](https://react-ai-stream-playground.vercel.app/cloud)
+2. Enter your email in the waitlist form
+3. Wait for the approval email — it contains your `ras_test_...` key
+
+<Callout>
+  Keys look like `ras_test_a1b2c3d4e5f6...` (free) or `ras_live_...` (paid). Keep it secret — it authorizes all your requests.
+</Callout>
+
+### Install packages
+
+```bash npm2yarn
+npm install @react-ai-stream/react @react-ai-stream/ui
+```
+
+### Add a proxy API route (keeps your key off the browser)
+
+```ts filename="app/api/chat/route.ts"
+export const runtime = 'nodejs'
+
+export async function POST(req: Request) {
+  const body = await req.json()
+
+  const upstream = await fetch(
+    'https://react-ai-stream-gateway.vercel.app/api/v1/chat',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.RAIS_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    }
+  )
+
+  return new Response(upstream.body, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
+}
+```
+
+Add to `.env.local`:
+
+```bash
+RAIS_API_KEY=ras_test_your_key_here
+```
+
+### Add the chat UI
+
+```tsx filename="app/page.tsx"
+'use client'
+import { useAIChat } from '@react-ai-stream/react'
+import { Chat } from '@react-ai-stream/ui'
+import '@react-ai-stream/ui/styles'
+
+export default function Page() {
+  const { messages, sendMessage, loading, stop } = useAIChat({
+    endpoint: '/api/chat',
+  })
+
+  return (
+    <div style={{ height: '80vh' }}>
+      <Chat messages={messages} onSend={sendMessage} onStop={stop} loading={loading} />
+    </div>
+  )
+}
+```
+
+### Run it
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`. You have streaming AI chat — Groq by default, with automatic fallback to OpenAI and Anthropic.
+
+</Steps>
+
+<Callout type="info">
+  **No provider account. No API key juggling.** RAIS Cloud handles Groq, OpenAI, Anthropic, and Gemini on its side.
+  Your `ras_test_...` key is the only credential your app needs.
+  [See full RAIS Cloud docs →](/cloud)
+</Callout>
+
+---
+
+## Path B — Self-hosted (you manage your own provider keys)
+
+Use this when you want zero external dependencies beyond the AI provider itself.
 
 <Steps>
 
@@ -17,17 +122,13 @@ Working AI streaming in a Next.js app in under 5 minutes.
 npm install @react-ai-stream/react @react-ai-stream/ui
 ```
 
-### Add your API key
+### Get a provider API key
 
-This example uses [Groq](https://console.groq.com) — free and instant. Add your key to `.env.local`:
+This example uses [Groq](https://console.groq.com/keys) — free tier, instant sign-up. Add to `.env.local`:
 
 ```bash
-GROQ_API_KEY=your_key_here
+GROQ_API_KEY=gsk_your_key_here
 ```
-
-<Callout>
-  Groq provides a generous free tier. For production, see [Providers](/providers) to use Anthropic Claude, OpenAI, or your own backend.
-</Callout>
 
 ### Create a streaming API route
 
@@ -114,7 +215,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader('Cache-Control', 'no-cache')
 
   const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
-
   const reader = upstream.body!.getReader()
   const decoder = new TextDecoder()
   let buf = ''
@@ -225,13 +325,15 @@ export default function Page() {
 
 ### Done
 
-That's it. You now have a streaming AI chat backed by any provider.
+You have a streaming AI chat backed by your own Groq account.
 
 </Steps>
 
-## Without the UI package
+---
 
-If you're bringing your own components, skip `@react-ai-stream/ui` entirely — the hook has no UI dependency:
+## Bring your own UI
+
+Both paths work without `@react-ai-stream/ui`. The hook has no UI dependency:
 
 ```tsx
 'use client'
@@ -262,11 +364,12 @@ export default function Page() {
 }
 ```
 
-See the [minimal example](/examples/minimal) for the full working version, and [custom UI](/examples/custom-ui) for a Tailwind implementation with a model switcher.
+---
 
 ## Next steps
 
-- [Providers](/providers) — Anthropic, OpenAI, Groq, or your own backend
-- [Hook architecture](/concepts/hook-architecture) — how isolated message stores work
-- [useAIChat API reference](/reference/useaichat) — all options and return values
-- [Custom UI example](/examples/custom-ui) — wire the hook to your design system
+- [RAIS Cloud full guide →](/cloud) — key management, providers, rate limits, error codes
+- [useAIChat API reference →](/reference/useaichat) — all options and return values
+- [Providers →](/providers) — Anthropic, OpenAI, Groq, or your own backend
+- [Custom UI example →](/examples/custom-ui) — wire the hook to your design system
+- [Hook architecture →](/concepts/hook-architecture) — how isolated message stores work

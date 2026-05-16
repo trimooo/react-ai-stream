@@ -1,0 +1,82 @@
+# Ecosystem
+
+All packages, adapters, and tools that speak RAIS Protocol v1.
+
+---
+
+## Official SDK
+
+| Package | Language | Description |
+|---|---|---|
+| [`@react-ai-stream/core`](https://npmjs.com/package/@react-ai-stream/core) | TypeScript | Zero-dep SSE engine, chunk normalizer, abort utils |
+| [`@react-ai-stream/react`](https://npmjs.com/package/@react-ai-stream/react) | React 18/19 | `useAIChat` hook, `AIChatProvider` |
+| [`@react-ai-stream/ui`](https://npmjs.com/package/@react-ai-stream/ui) | React | `<Chat>`, `<MessageList>`, `<MarkdownRenderer>` |
+| [`@react-ai-stream/vue`](https://npmjs.com/package/@react-ai-stream/vue) | Vue 3 | `useAIChat` composable, shallowRef reactivity |
+| [`@react-ai-stream/express`](https://npmjs.com/package/@react-ai-stream/express) | Node.js | `raisMiddleware()` for Express 4/5 |
+| [`@react-ai-stream/devtools`](https://npmjs.com/package/@react-ai-stream/devtools) | React | `<RAISDevTools />` floating panel + telemetry |
+| [`rais`](https://pypi.org/project/rais) | Python | `stream_response()` for FastAPI / ASGI |
+| [`create-ai-stream-app`](https://npmjs.com/package/create-ai-stream-app) | CLI | Scaffolds full-stack RAIS projects in seconds |
+
+All official packages carry the **RAIS Certified** badge — verified against the full Protocol v1 compliance suite.
+
+---
+
+## Server Adapters
+
+| Adapter | Status | Notes |
+|---|---|---|
+| Express (`@react-ai-stream/express`) | ✓ Stable | OpenAI · Anthropic · Groq |
+| FastAPI (`rais`) | ✓ Stable | `StreamingResponse` + async generator |
+| Hono (`rais-hono`) | Planned | Edge-first, Cloudflare Workers |
+| Fastify (`rais-fastify`) | Planned | Plugin with schema validation |
+| Flask (`rais-flask`) | Planned | Sync Python, `stream_with_context` |
+
+---
+
+## Client SDKs
+
+| SDK | Status | Notes |
+|---|---|---|
+| React (`@react-ai-stream/react`) | ✓ Stable | React 18 + 19, SSR-safe |
+| Vue 3 (`@react-ai-stream/vue`) | ✓ Stable | Composition API, shallowRef |
+| Svelte (`rais-svelte`) | Planned | Svelte 5 rune store |
+| SolidJS (`rais-solid`) | Planned | Fine-grained reactive primitives |
+| Vanilla JS (`@react-ai-stream/core`) | ✓ Stable | `streamSSE()` async iterator |
+
+---
+
+## Tooling
+
+| Tool | Description |
+|---|---|
+| [AI Stream Studio](https://react-ai-stream-playground.vercel.app) | Inspect, compare, benchmark, replay any SSE endpoint |
+| `rais-compliance` CLI | Run the full RAIS v1 test suite against any endpoint |
+| `rais-server` | Reference RAIS server for local testing |
+| `create-ai-stream-app` | Project scaffolder (Next.js, Vite, Express, FastAPI, HTML) |
+
+---
+
+## Contribute an adapter
+
+If your package implements RAIS Protocol v1, open a PR to add it to this page and the
+[playground ecosystem page](https://react-ai-stream-playground.vercel.app/ecosystem).
+
+**Checklist before submitting:**
+
+1. Run the [Stream Inspector](https://react-ai-stream-playground.vercel.app/inspect) against your endpoint
+2. Confirm all compliance checks pass (type fields, event ordering, proper termination)
+3. Add a link to npm/PyPI/crates.io in your PR
+
+```bash
+# Self-test with the compliance CLI
+npx rais-compliance https://your-endpoint.com/api/chat
+```
+
+---
+
+## RAIS Ecosystem Partners
+
+We're building a program to formally recognize high-quality RAIS implementations.
+
+If you're building something on RAIS and want to be listed as an ecosystem partner,
+[open an issue on GitHub](https://github.com/trimooo/react-ai-stream/issues).
