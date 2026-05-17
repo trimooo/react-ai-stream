@@ -99,8 +99,8 @@ export default function Home() {
         {/* ── Live chat ─────────────────────────────────────── */}
         <div style={{ margin: '56px 0 0' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Three providers, one RAIS key</h2>
-            <span style={{ fontSize: 13, color: '#94a3b8' }}>Groq · OpenAI · Anthropic — same prompt, same moment, one <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#f1f5f9', padding: '1px 5px', borderRadius: 4 }}>ras_live_</code> key</span>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Three models, one prompt</h2>
+            <span style={{ fontSize: 13, color: '#94a3b8' }}>Llama 70B · Llama 8B · Llama 4 Scout — same question, three answers, powered by your RAIS key</span>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
             <div style={{ background: '#0f172a', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
