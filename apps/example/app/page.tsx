@@ -61,7 +61,7 @@ export default function Home() {
           {/* Protocol badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 20, padding: '4px 14px 4px 8px', marginBottom: 32, fontSize: 12, color: '#a78bfa', fontWeight: 600 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-            RAIS Protocol v1 · Live demo
+            RAIS Protocol v1 · Production
           </div>
 
           <h1 className="hero-title" style={{ fontSize: '2.75rem', fontWeight: 800, letterSpacing: '-0.8px', margin: '0 0 18px', color: '#f1f5f9', lineHeight: 1.15 }}>
@@ -96,14 +96,13 @@ export default function Home() {
 
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 64px' }}>
 
-        {/* ── Live demo ─────────────────────────────────────── */}
+        {/* ── Live chat ─────────────────────────────────────── */}
         <div style={{ margin: '56px 0 0' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Three providers, one RAIS key</h2>
             <span style={{ fontSize: 13, color: '#94a3b8' }}>Groq · OpenAI · Anthropic — same prompt, same moment, one <code style={{ fontFamily: 'monospace', fontSize: 12, background: '#f1f5f9', padding: '1px 5px', borderRadius: 4 }}>ras_live_</code> key</span>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
-            {/* Demo header bar */}
             <div style={{ background: '#0f172a', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ display: 'flex', gap: 5 }}>
                 {['#ef4444','#f59e0b','#22c55e'].map(c => (

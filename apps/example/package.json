@@ -9,11 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
     "@react-ai-stream/react": "workspace:*",
     "@react-ai-stream/ui": "workspace:*",
     "next": "^15.0.0",
-    "openai": "^4.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
