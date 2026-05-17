@@ -43,7 +43,7 @@ const TIERS: Array<{
       'Live API key (ras_live_...)',
       '100,000 tokens/month',
       '60 requests/minute',
-      'OpenAI · Anthropic · Groq · Gemini',
+      'Groq · Gemini · OpenAI · Anthropic (coming)',
       'Analytics dashboard',
       'Request logs + replay',
       'Fallback chains',
@@ -93,7 +93,7 @@ const HOW_IT_WORKS = [
   {
     step: '01',
     title: 'Get an API key',
-    desc: 'Free key: instant. Pro/Team: apply and we email your key within 24 hours.',
+    desc: 'Free key: instant. Pro/Team: pay to activate instantly or wait up to 24h for manual approval.',
     code: null,
   },
   {
@@ -128,7 +128,7 @@ const FAQS = [
   },
   {
     q: 'What providers are supported?',
-    a: 'OpenAI, Anthropic, Groq, and Gemini at launch. Mistral, Together, and Cohere are on the roadmap.',
+    a: 'Groq (Llama 3.3 70B, Llama 4 Scout, Compound Beta) and Gemini (1.5 Flash, 1.5 Pro) are live — both are free-tier providers with no cost per token for the gateway. OpenAI and Anthropic are coming once demand justifies the cost.',
   },
 ]
 

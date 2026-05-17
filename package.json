@@ -8,7 +8,10 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
-    "clean": "turbo run clean && rimraf node_modules"
+    "clean": "turbo run clean && rimraf node_modules",
+    "dev:sdk": "turbo run dev --filter='./packages/*' --filter='./apps/example'",
+    "build:sdk": "turbo run build --filter='./packages/*' --filter='./apps/example'",
+    "test:sdk": "turbo run test --filter='./packages/*'"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,3 +1,10 @@
 packages:
+  # Public SDK packages — published to npm, safe for anyone to install/clone
   - 'packages/*'
-  - 'apps/*'
+  # Public apps — example site, docs
+  - 'apps/example'
+  - 'apps/docs'
+  # Internal services — require private env vars, deployed on Vercel only
+  # Run `pnpm dev:sdk` or `pnpm build:sdk` to work with only the public packages
+  - 'apps/gateway'
+  - 'apps/playground'

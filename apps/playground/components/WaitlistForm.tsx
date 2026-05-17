@@ -54,7 +54,7 @@ const PLAN_META: Record<Plan, {
       'Live API key (ras_live_...)',
       '100,000 tokens/month',
       '60 requests/minute',
-      'OpenAI · Anthropic · Groq · Gemini',
+      'Groq · Gemini · OpenAI · Anthropic (coming)',
       'Analytics dashboard',
       'Request logs + replay',
       'Fallback chains',
