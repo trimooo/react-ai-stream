@@ -5,25 +5,26 @@ import { useAIChat } from '@react-ai-stream/react'
 import { MessageList } from '@react-ai-stream/ui'
 import '@react-ai-stream/ui/styles'
 
-const MODELS = [
-  { model: 'llama-3.3-70b-versatile',                   label: 'Llama 3.3 70B',  badge: 'Meta' },
-  { model: 'llama-3.1-8b-instant',                       label: 'Llama 3.1 8B',   badge: 'Meta · fast' },
-  { model: 'meta-llama/llama-4-scout-17b-16e-instruct',  label: 'Llama 4 Scout',  badge: 'Meta · new' },
+const PROVIDERS = [
+  { provider: 'groq',      label: 'Groq',      badge: 'Llama 3.3 70B',   color: '#f59e0b' },
+  { provider: 'openai',    label: 'OpenAI',     badge: 'GPT-4o mini',     color: '#10b981' },
+  { provider: 'anthropic', label: 'Anthropic',  badge: 'Claude Haiku',    color: '#e879f9' },
 ]
 
 const SUGGESTIONS = [
   'Explain React Server Components in 3 sentences',
   'Write a haiku about TypeScript',
   'What is the difference between SSE and WebSockets?',
+  'Give me a one-liner to reverse a string in Python',
 ]
 
 export function DemoChat() {
   const [input, setInput] = useState('')
 
   const chats = [
-    useAIChat({ endpoint: `/api/chat?provider=groq&model=${MODELS[0]!.model}` }),
-    useAIChat({ endpoint: `/api/chat?provider=groq&model=${MODELS[1]!.model}` }),
-    useAIChat({ endpoint: `/api/chat?provider=groq&model=${MODELS[2]!.model}` }),
+    useAIChat({ endpoint: '/api/chat', body: { provider: PROVIDERS[0]!.provider } }),
+    useAIChat({ endpoint: '/api/chat', body: { provider: PROVIDERS[1]!.provider } }),
+    useAIChat({ endpoint: '/api/chat', body: { provider: PROVIDERS[2]!.provider } }),
   ]
 
   const anyLoading = chats.some((c) => c.loading)
@@ -40,16 +41,17 @@ export function DemoChat() {
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 12 }}>
-        {MODELS.map((m, i) => {
+      <div className="model-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 12 }}>
+        {PROVIDERS.map((p, i) => {
           const chat = chats[i]!
           return (
-            <div key={m.model} style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+            <div key={p.provider} style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: '10px 14px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{m.label}</span>
-                <span style={{ fontSize: 11, background: '#f3f4f6', color: '#6b7280', padding: '2px 7px', borderRadius: 20 }}>{m.badge}</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{p.label}</span>
+                <span style={{ fontSize: 11, background: '#f3f4f6', color: '#6b7280', padding: '2px 7px', borderRadius: 20 }}>{p.badge}</span>
                 {chat.loading && (
-                  <span style={{ marginLeft: 'auto', width: 8, height: 8, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1s infinite' }} />
+                  <span style={{ marginLeft: 'auto', width: 8, height: 8, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1s infinite', flexShrink: 0 }} />
                 )}
               </div>
               {chat.error && (
@@ -92,7 +94,7 @@ export function DemoChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) } }}
-          placeholder="Ask all three models at once…"
+          placeholder="Ask Groq, OpenAI, and Anthropic at once…"
           disabled={anyLoading}
           style={{ flex: 1, padding: '11px 16px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, outline: 'none', background: '#fff' }}
         />
