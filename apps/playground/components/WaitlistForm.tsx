@@ -350,6 +350,27 @@ function FreeSuccess({ name, email, apiKey, useCase }: {
 function PaidWaitlistSuccess({ name, email, plan }: { name: string; email: string; plan: Plan }) {
   const meta = PLAN_META[plan]
   const firstName = name.split(' ').at(0) ?? name
+  const [paying, setPaying] = useState(false)
+  const [payError, setPayError] = useState('')
+  const hasStripe = plan === 'pro' || plan === 'team'
+
+  async function handlePay() {
+    setPaying(true)
+    setPayError('')
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, plan }),
+      })
+      const data = await res.json()
+      if (data.url) { window.location.href = data.url; return }
+      setPayError(data.error ?? 'Could not start checkout. Try again.')
+    } catch {
+      setPayError('Network error. Try again.')
+    }
+    setPaying(false)
+  }
 
   return (
     <div style={{ width: '100%', maxWidth: 560 }}>
@@ -369,9 +390,44 @@ function PaidWaitlistSuccess({ name, email, plan }: { name: string; email: strin
       {/* Body */}
       <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', borderRadius: '0 0 14px 14px', padding: 24 }}>
 
+        {/* Pay now CTA — pro/team only */}
+        {hasStripe && (
+          <div style={{ padding: '16px 18px', background: `${meta.color}0c`, border: `1px solid ${meta.color}44`, borderRadius: 10, marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#f1f5f9', marginBottom: 4 }}>
+              Pay now to activate instantly
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6, marginBottom: 14 }}>
+              Skip the wait — pay {meta.price} and your{' '}
+              <code style={{ fontFamily: 'monospace', color: '#93c5fd', fontSize: 11 }}>ras_live_</code>{' '}
+              key arrives by email in minutes. No manual review.
+            </div>
+            {payError && (
+              <div style={{ fontSize: 12, color: '#f87171', padding: '6px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 6, marginBottom: 10, border: '1px solid rgba(239,68,68,0.2)' }}>
+                {payError}
+              </div>
+            )}
+            <button
+              onClick={handlePay}
+              disabled={paying}
+              style={{
+                width: '100%', padding: '11px 0',
+                background: paying ? `${meta.color}60` : meta.color,
+                color: '#fff', border: 'none', borderRadius: 8,
+                fontSize: 14, fontWeight: 700,
+                cursor: paying ? 'not-allowed' : 'pointer',
+                letterSpacing: '-0.2px', transition: 'background 0.15s',
+              }}
+            >
+              {paying ? 'Redirecting to Stripe…' : `Pay ${meta.price} to activate →`}
+            </button>
+          </div>
+        )}
+
         {/* What happens next */}
         <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', marginBottom: 10 }}>What happens next</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', marginBottom: 10 }}>
+            {hasStripe ? 'Or wait for manual review (24h)' : 'What happens next'}
+          </div>
           {[
             { icon: '📬', text: 'We review your application (usually within 24 hours)' },
             { icon: '🔑', text: `Your ${meta.label} key (${meta.keyPrefix}...) is emailed to you on approval` },

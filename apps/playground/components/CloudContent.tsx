@@ -124,7 +124,7 @@ const FAQS = [
   },
   {
     q: 'How do Pro/Team keys get delivered?',
-    a: 'We review paid applications manually (usually within 24 hours). When approved, your live key arrives by email with a personalized quickstart for your use case. Pro starts at €10/month, Team at €49/month.',
+    a: 'Two options: (1) Pay now — submit the form below, click "Pay to activate", complete checkout on Stripe, and your ras_live_ key arrives by email within minutes. (2) Manual review — submit the form and wait up to 24h for approval. Pro is €10/month, Team is €49/month.',
   },
   {
     q: 'What providers are supported?',
@@ -132,7 +132,7 @@ const FAQS = [
   },
 ]
 
-export function CloudContent() {
+export function CloudContent({ checkoutStatus, checkoutPlan }: { checkoutStatus?: string | undefined; checkoutPlan?: string | undefined }) {
   const [activePlan, setActivePlan] = useState<Plan>('free')
 
   function selectPlan(plan: Plan) {
@@ -142,6 +142,34 @@ export function CloudContent() {
 
   return (
     <main style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px' }}>
+
+      {/* Stripe checkout result banners */}
+      {checkoutStatus === 'success' && (
+        <div style={{ marginBottom: 32, padding: '18px 24px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ fontSize: 22, flexShrink: 0 }}>✓</div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#f1f5f9', marginBottom: 3 }}>
+              Payment received — your {checkoutPlan ? checkoutPlan.charAt(0).toUpperCase() + checkoutPlan.slice(1) : ''} key is on its way
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>
+              Check your email inbox (and spam folder) — your <code style={{ fontFamily: 'monospace', fontSize: 12, color: '#93c5fd' }}>ras_live_</code> key should arrive within a few minutes.
+              Once you have it, paste it into the{' '}
+              <a href="https://react-ai-stream-gateway.vercel.app/dashboard" style={{ color: '#3B5BFF', textDecoration: 'none', fontWeight: 600 }}>dashboard →</a>
+            </div>
+          </div>
+        </div>
+      )}
+      {checkoutStatus === 'cancel' && (
+        <div style={{ marginBottom: 32, padding: '16px 24px', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ fontSize: 20, flexShrink: 0 }}>↩</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', marginBottom: 2 }}>Payment cancelled</div>
+            <div style={{ fontSize: 13, color: '#64748b' }}>
+              No charge was made. Your waitlist spot is saved — apply below and pay whenever you&apos;re ready.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HERO */}
       <section style={{ textAlign: 'center', padding: '60px 0 52px' }}>
@@ -257,7 +285,11 @@ export function CloudContent() {
       {/* APPLY FORM */}
       <section id="waitlist" style={{ marginBottom: 80, padding: '56px 40px', background: 'rgba(59,91,255,0.07)', border: '1px solid rgba(59,91,255,0.18)', borderRadius: 20, textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 20, padding: '3px 14px', marginBottom: 16, fontSize: 11, color: '#4ade80', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-          {activePlan === 'free' ? 'Free key · No credit card · Instant' : `${activePlan.charAt(0).toUpperCase() + activePlan.slice(1)} waitlist · Key emailed on approval`}
+          {activePlan === 'free'
+            ? 'Free key · No credit card · Instant'
+            : activePlan === 'enterprise'
+              ? 'Enterprise · Custom pricing · Contact us'
+              : `${activePlan.charAt(0).toUpperCase() + activePlan.slice(1)} · Pay to activate instantly · or wait 24h`}
         </div>
         <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 800, letterSpacing: '-0.04em', color: '#f1f5f9' }}>
           {activePlan === 'free' ? 'Get your free API key' : `Apply for ${activePlan.charAt(0).toUpperCase() + activePlan.slice(1)}`}
@@ -265,7 +297,9 @@ export function CloudContent() {
         <p style={{ margin: '0 auto 32px', maxWidth: 480, fontSize: 14, color: '#64748b', lineHeight: 1.7 }}>
           {activePlan === 'free'
             ? 'Your free key (ras_test_...) is emailed immediately. 5,000 tokens/month, no card needed.'
-            : `We review ${activePlan} applications manually. Your live key (ras_live_...) arrives by email within 24 hours of approval.`}
+            : activePlan === 'enterprise'
+              ? 'Tell us about your use case and we will get back to you within 24 hours with a custom plan.'
+              : `Fill in your details, then pay ${activePlan === 'pro' ? '€10' : '€49'}/month to activate your live key instantly — or wait up to 24h for manual approval.`}
         </p>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <WaitlistForm defaultPlan={activePlan} />

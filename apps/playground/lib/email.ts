@@ -271,6 +271,42 @@ function buildFreeWelcomeHtml(opts: { name: string; email: string; apiKey: strin
           <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;">2 · Use it (key already filled in)</div>
           <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:14px 16px;font-family:ui-monospace,monospace;font-size:11px;color:#93c5fd;white-space:pre-wrap;line-height:1.7;">${snippet.code}</div>
         </td></tr>
+        <tr><td style="padding:24px 40px 0;">
+          <div style="font-size:11px;font-weight:700;color:#334155;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">Also works with</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:12px 14px;">
+              <div style="font-size:10px;font-weight:700;color:#64748b;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;">Vue 3</div>
+              <div style="font-family:ui-monospace,monospace;font-size:11px;color:#93c5fd;white-space:pre-wrap;line-height:1.6;">import { useAIChat } from '@react-ai-stream/vue'
+// identical API — works in &lt;script setup&gt;
+const { messages, sendMessage } = useAIChat({
+  endpoint: '${GATEWAY}/api/v1/chat',
+  extraHeaders: { Authorization: 'Bearer ${opts.apiKey}' },
+})</div>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:12px 14px;">
+              <div style="font-size:10px;font-weight:700;color:#64748b;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;">Python (httpx)</div>
+              <div style="font-family:ui-monospace,monospace;font-size:11px;color:#93c5fd;white-space:pre-wrap;line-height:1.6;">with httpx.stream("POST", "${GATEWAY}/api/v1/chat",
+    headers={"Authorization": "Bearer ${opts.apiKey}"},
+    json={"messages": [{"role":"user","content":"Hi"}]}) as r:
+  for line in r.iter_lines():
+    if line.startswith("data:"):
+      chunk = json.loads(line[5:])
+      if chunk["type"] == "text": print(chunk["text"], end="")</div>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:12px 14px;">
+              <div style="font-size:10px;font-weight:700;color:#64748b;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;">Next.js Server Proxy (key stays server-side)</div>
+              <div style="font-family:ui-monospace,monospace;font-size:11px;color:#93c5fd;white-space:pre-wrap;line-height:1.6;">// app/api/ai/route.ts
+export async function POST(req: Request) {
+  return fetch('${GATEWAY}/api/v1/chat', {
+    method: 'POST',
+    headers: { Authorization: \`Bearer \${process.env.RAIS_API_KEY}\` },
+    body: await req.text(),
+  })
+}
+// Client: useAIChat({ endpoint: '/api/ai' })</div>
+            </div>
+          </div>
+        </td></tr>
         ${upgradeCta}
         <tr><td style="padding:20px 40px 0;">
           <div style="background:rgba(59,91,255,0.07);border:1px solid rgba(59,91,255,0.2);border-radius:10px;padding:18px 20px;">

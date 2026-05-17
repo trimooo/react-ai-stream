@@ -13,7 +13,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Email: **leotrimthaqi605@gmail.com**
+Email: **leo@devleo.de**
 
 Include in your report:
 - Description of the vulnerability

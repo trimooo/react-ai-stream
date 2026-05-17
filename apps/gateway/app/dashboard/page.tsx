@@ -264,17 +264,91 @@ export default function DashboardPage() {
 
   // ─── Full Dashboard ───────────────────────────────────────────────────────
 
+  const k = key || 'ras_live_...'
+
   const quickstartCode = `import { useAIChat } from '@react-ai-stream/react'
 
 const { messages, sendMessage, loading } = useAIChat({
   endpoint: "${GATEWAY_DISPLAY}/api/v1/chat",
   extraHeaders: {
-    Authorization: \`Bearer ${key || 'ras_live_...'}\`,
+    Authorization: \`Bearer ${k}\`,
   },
 })`
 
+  const vueCode = `import { useAIChat } from '@react-ai-stream/vue'
+
+// In your Vue component <script setup>
+const { messages, sendMessage, isStreaming } = useAIChat({
+  endpoint: '${GATEWAY_DISPLAY}/api/v1/chat',
+  extraHeaders: {
+    Authorization: \`Bearer ${k}\`,
+  },
+})`
+
+  const nextProxyCode = `// app/api/ai/route.ts — key stays server-side, never exposed to browser
+export async function POST(req: Request) {
+  return fetch('${GATEWAY_DISPLAY}/api/v1/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: \`Bearer \${process.env.RAIS_API_KEY}\`,
+    },
+    body: await req.text(),
+  })
+}
+
+// Client component — useAIChat points at your own route
+import { useAIChat } from '@react-ai-stream/react'
+const { messages, sendMessage } = useAIChat({ endpoint: '/api/ai' })`
+
+  const expressCode = `import express from 'express'
+const app = express()
+app.use(express.json())
+
+app.post('/api/chat', async (req, res) => {
+  const upstream = await fetch('${GATEWAY_DISPLAY}/api/v1/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: \`Bearer \${process.env.RAIS_API_KEY}\`,
+    },
+    body: JSON.stringify(req.body),
+  })
+  res.setHeader('Content-Type', 'text/event-stream')
+  upstream.body?.pipeTo(
+    new WritableStream({
+      write: (chunk) => res.write(chunk),
+      close: () => res.end(),
+    })
+  )
+})
+app.listen(3000)`
+
+  const pythonCode = `import httpx, json
+
+# pip install httpx
+
+url = "${GATEWAY_DISPLAY}/api/v1/chat"
+headers = {
+    "Authorization": "Bearer ${k}",
+    "Content-Type": "application/json",
+}
+body = {
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "provider": "groq",
+}
+
+with httpx.stream("POST", url, headers=headers, json=body) as r:
+    for line in r.iter_lines():
+        if line.startswith("data:"):
+            chunk = json.loads(line[5:])
+            if chunk["type"] == "text":
+                print(chunk["text"], end="", flush=True)
+            elif chunk["type"] == "done":
+                break`
+
   const curlCode = `curl -X POST ${GATEWAY_DISPLAY}/api/v1/chat \\
-  -H "Authorization: Bearer ${key || 'ras_live_...'}" \\
+  -H "Authorization: Bearer ${k}" \\
   -H "Content-Type: application/json" \\
   -d '{"messages":[{"role":"user","content":"Hello"}],"provider":"groq"}' \\
   --no-buffer`
@@ -438,7 +512,7 @@ const { messages, sendMessage, loading } = useAIChat({
           <div style={card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 3 }}>React / Next.js</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 3 }}>React / Next.js (client)</div>
                 <div style={{ fontSize: 12, color: '#475569' }}>Drop into any component. Zero backend changes.</div>
               </div>
               <button onClick={() => copy(quickstartCode, 'react')} style={copyBtn}>
@@ -446,6 +520,58 @@ const { messages, sendMessage, loading } = useAIChat({
               </button>
             </div>
             <pre style={codeBlock}><code>{quickstartCode}</code></pre>
+          </div>
+
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 3 }}>Vue 3</div>
+                <div style={{ fontSize: 12, color: '#475569' }}>Same hook API, works identically in Vue <code style={{ ...mono, fontSize: 11 }}>{'<script setup>'}</code>.</div>
+              </div>
+              <button onClick={() => copy(vueCode, 'vue')} style={copyBtn}>
+                {copied === 'vue' ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+            <pre style={codeBlock}><code>{vueCode}</code></pre>
+          </div>
+
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 3 }}>Next.js — Server Proxy</div>
+                <div style={{ fontSize: 12, color: '#475569' }}>Keep your key server-side. Best for SaaS products where you don&apos;t want users to see the key.</div>
+              </div>
+              <button onClick={() => copy(nextProxyCode, 'nextproxy')} style={copyBtn}>
+                {copied === 'nextproxy' ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+            <pre style={codeBlock}><code>{nextProxyCode}</code></pre>
+          </div>
+
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 3 }}>Express.js — Server Proxy</div>
+                <div style={{ fontSize: 12, color: '#475569' }}>Proxy the RAIS stream from your own Express backend. Key stays on the server.</div>
+              </div>
+              <button onClick={() => copy(expressCode, 'express')} style={copyBtn}>
+                {copied === 'express' ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+            <pre style={codeBlock}><code>{expressCode}</code></pre>
+          </div>
+
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 3 }}>Python</div>
+                <div style={{ fontSize: 12, color: '#475569' }}>Raw HTTP streaming with <code style={{ ...mono, fontSize: 11 }}>httpx</code>. Works in any Python 3.8+ environment.</div>
+              </div>
+              <button onClick={() => copy(pythonCode, 'python')} style={copyBtn}>
+                {copied === 'python' ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+            <pre style={codeBlock}><code>{pythonCode}</code></pre>
           </div>
 
           <div style={card}>
