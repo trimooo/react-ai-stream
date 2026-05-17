@@ -54,9 +54,11 @@ async function sendEmail(opts: {
     console.log(`[email] RESEND_API_KEY not set — would send "${opts.subject}" to ${opts.to}`)
     return { sent: false, error: 'RESEND_API_KEY not configured' }
   }
-  // In dev/test, Resend only allows sending to the account owner's verified address.
-  // Set RESEND_TEST_TO to redirect all outgoing email to that address during development.
-  const testOverride = (process.env.RESEND_TEST_TO ?? '').trim()
+  // RESEND_TEST_TO only applies outside production — prevents accidental email
+  // redirection when the var is left set in Vercel env vars.
+  const testOverride = process.env.NODE_ENV !== 'production'
+    ? (process.env.RESEND_TEST_TO ?? '').trim()
+    : ''
   const recipient = testOverride || opts.to
   if (testOverride) {
     console.log(`[email] RESEND_TEST_TO active — redirecting "${opts.subject}" to ${testOverride} (originally: ${opts.to})`)
